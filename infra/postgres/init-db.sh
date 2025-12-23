@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    -- Створення БД
+    CREATE DATABASE $AUTH_DB_NAME;
+    CREATE DATABASE $CORE_DB_NAME;
+
+    -- Створення користувачів з паролями зі змінних оточення
+    CREATE USER $AUTH_DB_USER WITH PASSWORD '$AUTH_DB_PASSWORD';
+    CREATE USER $CORE_DB_USER WITH PASSWORD '$CORE_DB_PASSWORD';
+
+    -- Обмеження прав
+    GRANT ALL PRIVILEGES ON DATABASE $AUTH_DB_NAME TO $AUTH_DB_USER;
+    GRANT ALL PRIVILEGES ON DATABASE $CORE_DB_NAME TO $CORE_DB_USER;
+EOSQL
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$AUTH_DB_NAME" <<-EOSQL
+    GRANT ALL ON SCHEMA public TO $AUTH_DB_USER;
+EOSQL
