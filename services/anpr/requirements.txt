@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-multipart
+opencv-python-headless
+# Встановлюємо Nomeroff Net з PyPI
+nomeroff-net
+# Додаткові бібліотеки для обробки зображень
+numpy
+Pillow
