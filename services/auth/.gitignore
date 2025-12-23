@@ -1,0 +1,6 @@
+auth-service
+bin/
+out/
+
+.env
+*.env.local
