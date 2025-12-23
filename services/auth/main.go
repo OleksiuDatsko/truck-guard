@@ -25,10 +25,10 @@ func main() {
 	
 	r := gin.Default()
 	
-	r.POST("/auth/register", HandleRegister)
-	r.POST("/auth/keys", HandleCreateKey)
-	r.POST("/auth/login", HandleLogin)
-	r.GET("/auth/validate", HandleValidate)
+	r.POST("/register", HandleRegister)
+	r.POST("/keys", HandleCreateKey)
+	r.POST("/login", HandleLogin)
+	r.GET("/validate", HandleValidate)
 	
 	r.Run(":8080")
 }
