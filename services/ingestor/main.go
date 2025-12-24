@@ -1,11 +1,11 @@
 package main
 
 import (
-	"os"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/redis/go-redis/v9"
+	"os"
 )
 
 var (
@@ -28,6 +28,10 @@ func main() {
 
 	r := gin.Default()
 	r.POST("/ingest", HandleIngest)
-	
+
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
 	r.Run(":8082")
 }

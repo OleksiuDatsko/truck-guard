@@ -25,7 +25,6 @@ services:
 
   gateway:
     image: nginx:stable-alpine
-    container_name: truckguard_gateway
     ports:
       - "80:80"
     volumes:

@@ -10,9 +10,9 @@ type User struct {
 }
 
 type APIKey struct {
-	ID        uint      `gorm:"primaryKey"`
-	KeyHash   string    `gorm:"unique;index;not null"` // Хеш ключа для пошуку
-	OwnerName string    `json:"owner_name"`
-	IsActive  bool      `gorm:"default:true"`
+	ID        uint   `gorm:"primaryKey"`
+	KeyHash   string `gorm:"unique;index;not null"` // Хеш ключа для пошуку
+	OwnerName string `json:"owner_name"`
+	IsActive  bool   `gorm:"default:true"`
 	CreatedAt time.Time
 }

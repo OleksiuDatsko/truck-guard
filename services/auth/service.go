@@ -30,13 +30,13 @@ func GenerateToken(id uint, role string) (string, error) {
 
 func ValidateKeyAndGetMetadata(key string) (CameraMetadata, bool) {
 	h := HashKey(key)
-	
+
 	if v, _ := RDB.Get(ctx, "auth:"+h).Result(); v != "" {
 		var meta CameraMetadata
 		json.Unmarshal([]byte(v), &meta)
 		return meta, true
 	}
-	
+
 	var ak APIKey
 	if err := DB.Where("key_hash = ? AND is_active = ?", h, true).First(&ak).Error; err == nil {
 		meta := CameraMetadata{
