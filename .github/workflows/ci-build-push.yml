@@ -2,7 +2,7 @@ name: CI Build and Push Services
 
 on:
   push:
-    branches: [ develop ]
+    branches: [develop]
 
 permissions:
   contents: read
@@ -27,7 +27,7 @@ jobs:
         id: filter
         run: |
           ALL_SERVICES=$(find services -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
-          
+
           SELECTED_SERVICES=()
 
           for service in $ALL_SERVICES; do
@@ -41,7 +41,7 @@ jobs:
 
           SERVICES_JSON=$(printf '%s\n' "${SELECTED_SERVICES[@]}" | jq -R . | jq -s -c .)
           echo "services=$SERVICES_JSON" >> $GITHUB_OUTPUT
-          
+
           echo "---"
           echo "Services to build: $SERVICES_JSON"
           echo "Total services: ${#SELECTED_SERVICES[@]}"
@@ -53,22 +53,10 @@ jobs:
     strategy:
       matrix:
         service: ${{ fromJson(needs.prepare.outputs.services) }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository_owner }}/truckguard-${{ matrix.service }}
-          tags: |
-            type=raw,value=dev
-            type=sha,format=short
-          labels: |
-            org.opencontainers.image.title=TruckGuard ${{ matrix.service }} service
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -80,16 +68,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Docker Image
+      - name: Build and Push Docker Image - ${{ matrix.service }}
         uses: docker/build-push-action@v5
         with:
           context: ./services/${{ matrix.service }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/truckguard-${{ matrix.service }}:dev
+            ghcr.io/${{ github.repository_owner }}/truckguard-${{ matrix.service }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.title=TruckGuard ${{ matrix.service }} Service
+            org.opencontainers.image.description=TruckGuard ${{ matrix.service }} microservice
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=dev
           cache-from: type=gha
           cache-to: type=inline
-
-      - name: Build complete
-        run: |
-          echo "✓ Successfully built and pushed: truckguard-${{ matrix.service }}"
