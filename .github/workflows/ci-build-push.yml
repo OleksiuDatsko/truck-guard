@@ -26,12 +26,14 @@ jobs:
       - name: Determine services to build
         id: filter
         run: |
-          ALL_SERVICES=$(find services -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
+          # get all service directories
+          ALL_SERVICES=($(find services -maxdepth 1 -mindepth 1 -type d -exec basename {} \;))
 
           SELECTED_SERVICES=()
+          CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
 
-          for service in $ALL_SERVICES; do
-            if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -q "services/$service/"; then
+          for service in "${ALL_SERVICES[@]}"; do
+            if echo "$CHANGED_FILES" | grep -q "services/$service/"; then
               SELECTED_SERVICES+=("$service")
               echo "✓ Service '$service' has changes"
             else
@@ -39,16 +41,25 @@ jobs:
             fi
           done
 
-          SERVICES_JSON=$(printf '%s\n' "${SELECTED_SERVICES[@]}" | jq -R . | jq -s -c .)
+          # filter out any accidental empty names
+          FILTERED_SERVICES=()
+          for s in "${SELECTED_SERVICES[@]}"; do
+            if [ -n "$s" ]; then
+              FILTERED_SERVICES+=("$s")
+            fi
+          done
+
+          # produce JSON array for job output
+          SERVICES_JSON=$(printf '%s\n' "${FILTERED_SERVICES[@]}" | jq -R . | jq -s -c .)
           echo "services=$SERVICES_JSON" >> $GITHUB_OUTPUT
 
           echo "---"
           echo "Services to build: $SERVICES_JSON"
-          echo "Total services: ${#SELECTED_SERVICES[@]}"
+          echo "Total services: ${#FILTERED_SERVICES[@]}"
 
   build-and-push:
     needs: prepare
-    if: ${{ needs.prepare.outputs.services != '[]' && needs.prepare.outputs.services != '' }}
+    if: ${{ needs.prepare.outputs.services != '[]' && needs.prepare.outputs.services != '' && needs.prepare.outputs.services != '[""]' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -67,6 +78,13 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate matrix.service
+        run: |
+          if [ -z "${{ matrix.service }}" ]; then
+            echo "Error: matrix.service is empty — aborting the job to prevent invalid Docker tags."
+            exit 1
+          fi
 
       - name: Build and Push Docker Image - ${{ matrix.service }}
         uses: docker/build-push-action@v5
