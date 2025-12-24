@@ -79,9 +79,13 @@ func HandleLogin(c *gin.Context) {
 
 func HandleValidate(c *gin.Context) {
 	k := c.GetHeader("X-API-Key")
-	if k != "" && ValidateKey(k) {
-		c.Status(200)
-		return
+	if k != "" {
+		if meta, valid := ValidateKeyAndGetMetadata(k); valid {
+			c.Header("X-Camera-ID", meta.ID)
+			c.Header("X-Camera-Name", meta.Name)
+			c.Status(200)
+			return
+		}
 	}
 
 	a := c.GetHeader("Authorization")

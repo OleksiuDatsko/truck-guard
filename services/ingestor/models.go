@@ -6,10 +6,12 @@ import (
 )
 
 type IngestEvent struct {
-	DeviceID string    `json:"device_id"`
-	ImageKey string    `json:"image_key"`
-	Payload  string    `json:"payload"` 
-	At       time.Time `json:"at"`
+	CameraID   string    `json:"camera_id"`
+	CameraName string    `json:"camera_name"`
+	DeviceID   string    `json:"device_id"`
+	ImageKey   string    `json:"image_key"`
+	Payload    string    `json:"payload"`
+	At         time.Time `json:"at"`
 }
 
 func (e *IngestEvent) ToJSON() string {
