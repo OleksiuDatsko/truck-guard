@@ -2,17 +2,33 @@ package main
 
 import "time"
 
+type Permission struct {
+	ID          string `gorm:"primaryKey" json:"id"`
+	Name        string `gorm:"not null" json:"name"`
+	Description string `json:"description"`
+	Module      string `json:"module"`
+}
+
+type Role struct {
+	ID          uint         `gorm:"primaryKey" json:"id"`
+	Name        string       `gorm:"unique;not null" json:"name"`
+	Description string       `json:"description"`
+	Permissions []Permission `gorm:"many2many:role_permissions;" json:"permissions"`
+}
+
 type User struct {
-	ID           uint   `gorm:"primaryKey"`
-	Username     string `gorm:"unique;not null"`
-	PasswordHash string `gorm:"not null"` // Зберігаємо bcrypt хеш
-	Role         string `gorm:"default:operator"`
+	ID           uint      `gorm:"primaryKey" json:"id"`
+	Username     string    `gorm:"unique;not null" json:"username"`
+	PasswordHash string    `gorm:"not null" json:"-"`
+	RoleID       uint      `json:"role_id"`
+	Role         Role      `gorm:"foreignKey:RoleID" json:"role"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type APIKey struct {
-	ID        uint   `gorm:"primaryKey"`
-	KeyHash   string `gorm:"unique;index;not null"` // Хеш ключа для пошуку
-	OwnerName string `json:"owner_name"`
-	IsActive  bool   `gorm:"default:true"`
-	CreatedAt time.Time
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	KeyHash   string    `gorm:"unique;index;not null" json:"-"`
+	OwnerName string    `json:"owner_name"`
+	IsActive  bool      `gorm:"default:true" json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
 }
