@@ -32,29 +32,29 @@ func main() {
 	r.POST("/register", RequirePermission("create:users"), HandleRegister)
 
 	admin := r.Group("/admin")
-    admin.Use(RequirePermission("manage:settings"))
-    {
-        // Користувачі
-        admin.GET("/users", RequirePermission("read:users"), HandleListUsers)
-        admin.PUT("/users/:id/role", RequirePermission("update:users"), HandleUpdateUserRole)
-        admin.DELETE("/users/:id", RequirePermission("delete:users"), HandleDeleteUser)
+	admin.Use(RequirePermission("manage:settings"))
+	{
+		// Користувачі
+		admin.GET("/users", RequirePermission("read:users"), HandleListUsers)
+		admin.PUT("/users/:id/role", RequirePermission("update:users"), HandleUpdateUserRole)
+		admin.DELETE("/users/:id", RequirePermission("delete:users"), HandleDeleteUser)
 
-        // Ролі
-        admin.GET("/roles", RequirePermission("read:roles"), HandleListRoles)
-        admin.POST("/roles", RequirePermission("create:roles"), HandleCreateRole)
-        admin.PUT("/roles/:id", RequirePermission("update:roles"), HandleUpdateRole)
-        admin.DELETE("/roles/:id", RequirePermission("delete:roles"), HandleDeleteRole)
-        admin.POST("/roles/:id/permissions", RequirePermission("update:roles"), HandleAssignPermissionsToRole)
+		// Ролі
+		admin.GET("/roles", RequirePermission("read:roles"), HandleListRoles)
+		admin.POST("/roles", RequirePermission("create:roles"), HandleCreateRole)
+		admin.PUT("/roles/:id", RequirePermission("update:roles"), HandleUpdateRole)
+		admin.DELETE("/roles/:id", RequirePermission("delete:roles"), HandleDeleteRole)
+		admin.POST("/roles/:id/permissions", RequirePermission("update:roles"), HandleAssignPermissionsToRole)
 
-        // Ключі (IoT)
-        admin.GET("/keys", RequirePermission("read:keys"), HandleListKeys)
-        admin.POST("/keys", RequirePermission("create:keys"), HandleCreateKeyWithPerms)
-        admin.DELETE("/keys/:id", RequirePermission("delete:keys"), HandleDeleteKey)
-        admin.PUT("/keys/:id/permissions", RequirePermission("update:keys"), HandleAssignPermissionsToKey)
-        admin.PUT("/keys/:id", RequirePermission("update:keys"), HandleUpdateKey)
+		// Ключі (IoT)
+		admin.GET("/keys", RequirePermission("read:keys"), HandleListKeys)
+		admin.POST("/keys", RequirePermission("create:keys"), HandleCreateKeyWithPerms)
+		admin.DELETE("/keys/:id", RequirePermission("delete:keys"), HandleDeleteKey)
+		admin.PUT("/keys/:id/permissions", RequirePermission("update:keys"), HandleAssignPermissionsToKey)
+		admin.PUT("/keys/:id", RequirePermission("update:keys"), HandleUpdateKey)
 
-        admin.GET("/permissions", RequirePermission("read:roles"), HandleListPermissions)
-    }
+		admin.GET("/permissions", RequirePermission("read:roles"), HandleListPermissions)
+	}
 
 	r.Run(":8080")
 }
@@ -69,7 +69,6 @@ func seedData() {
 		{ID: "create:roles", Name: "Create Roles", Module: "auth"},
 		{ID: "update:roles", Name: "Update Roles", Module: "auth"},
 		{ID: "delete:roles", Name: "Delete Roles", Module: "auth"},
-		{ID: "export:data", Name: "Export Data", Module: "core"},
 		{ID: "manage:settings", Name: "Manage Settings", Module: "auth"},
 		{ID: "view:audit", Name: "View Audit", Module: "auth"},
 		{ID: "auth:login", Name: "Login Access", Module: "auth"},
@@ -78,6 +77,7 @@ func seedData() {
 		{ID: "create:keys", Name: "Create API Keys", Module: "auth"},
 		{ID: "update:keys", Name: "Update API Keys", Module: "auth"},
 		{ID: "delete:keys", Name: "Delete API Keys", Module: "auth"},
+		{ID: "create:ingest", Name: "Create Ingestion Data", Module: "ingestor"},
 	}
 
 	for _, p := range perms {

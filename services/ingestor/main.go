@@ -27,7 +27,7 @@ func main() {
 	MinioClient = minioClient
 
 	r := gin.Default()
-	r.POST("/ingest", HandleIngest)
+	r.POST("/ingest", RequirePermission("create:ingest"), HandleIngest)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
