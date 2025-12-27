@@ -26,9 +26,10 @@ type User struct {
 }
 
 type APIKey struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	KeyHash   string    `gorm:"unique;index;not null" json:"-"`
-	OwnerName string    `json:"owner_name"`
-	IsActive  bool      `gorm:"default:true" json:"is_active"`
-	CreatedAt time.Time `json:"created_at"`
+	ID          uint         `gorm:"primaryKey" json:"id"`
+	KeyHash     string       `gorm:"unique;index;not null" json:"-"`
+	OwnerName   string       `json:"owner_name"`
+	IsActive    bool         `gorm:"default:true" json:"is_active"`
+	Permissions []Permission `gorm:"many2many:apikey_permissions;" json:"permissions"`
+	CreatedAt   time.Time    `json:"created_at"`
 }

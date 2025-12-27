@@ -32,30 +32,35 @@ func main() {
 	r.POST("/register", RequirePermission("create:users"), HandleRegister)
 
 	admin := r.Group("/admin")
-	admin.Use(RequirePermission("manage:settings"))
-	{
-		admin.PUT("/users/:id/role", HandleUpdateUserRole)
+    admin.Use(RequirePermission("manage:settings"))
+    {
+        // Користувачі
+        admin.GET("/users", RequirePermission("read:users"), HandleListUsers)
+        admin.PUT("/users/:id/role", RequirePermission("update:users"), HandleUpdateUserRole)
+        admin.DELETE("/users/:id", RequirePermission("delete:users"), HandleDeleteUser)
 
-		admin.POST("/keys", HandleCreateKey)
+        // Ролі
+        admin.GET("/roles", RequirePermission("read:roles"), HandleListRoles)
+        admin.POST("/roles", RequirePermission("create:roles"), HandleCreateRole)
+        admin.PUT("/roles/:id", RequirePermission("update:roles"), HandleUpdateRole)
+        admin.DELETE("/roles/:id", RequirePermission("delete:roles"), HandleDeleteRole)
+        admin.POST("/roles/:id/permissions", RequirePermission("update:roles"), HandleAssignPermissionsToRole)
 
-		admin.GET("/permissions", HandleListPermissions)
-		admin.POST("/roles", HandleCreateRole)
-		admin.POST("/roles/:id/permissions", HandleAssignPermissionsToRole)
-	}
+        // Ключі (IoT)
+        admin.GET("/keys", RequirePermission("read:keys"), HandleListKeys)
+        admin.POST("/keys", RequirePermission("create:keys"), HandleCreateKeyWithPerms)
+        admin.DELETE("/keys/:id", RequirePermission("delete:keys"), HandleDeleteKey)
+        admin.PUT("/keys/:id/permissions", RequirePermission("update:keys"), HandleAssignPermissionsToKey)
+        admin.PUT("/keys/:id", RequirePermission("update:keys"), HandleUpdateKey)
+
+        admin.GET("/permissions", RequirePermission("read:roles"), HandleListPermissions)
+    }
 
 	r.Run(":8080")
 }
 
 func seedData() {
 	perms := []Permission{
-		{ID: "read:vehicles", Name: "Read Vehicles", Module: "core"},
-		{ID: "create:vehicles", Name: "Create Vehicles", Module: "core"},
-		{ID: "update:vehicles", Name: "Update Vehicles", Module: "core"},
-		{ID: "delete:vehicles", Name: "Delete Vehicles", Module: "core"},
-		{ID: "read:reports", Name: "Read Reports", Module: "core"},
-		{ID: "create:reports", Name: "Create Reports", Module: "core"},
-		{ID: "update:reports", Name: "Update Reports", Module: "core"},
-		{ID: "delete:reports", Name: "Delete Reports", Module: "core"},
 		{ID: "read:users", Name: "Read Users", Module: "auth"},
 		{ID: "create:users", Name: "Create Users", Module: "auth"},
 		{ID: "update:users", Name: "Update Users", Module: "auth"},
@@ -69,6 +74,10 @@ func seedData() {
 		{ID: "view:audit", Name: "View Audit", Module: "auth"},
 		{ID: "auth:login", Name: "Login Access", Module: "auth"},
 		{ID: "self:profile", Name: "Self Profile", Module: "auth"},
+		{ID: "read:keys", Name: "Read API Keys", Module: "auth"},
+		{ID: "create:keys", Name: "Create API Keys", Module: "auth"},
+		{ID: "update:keys", Name: "Update API Keys", Module: "auth"},
+		{ID: "delete:keys", Name: "Delete API Keys", Module: "auth"},
 	}
 
 	for _, p := range perms {
