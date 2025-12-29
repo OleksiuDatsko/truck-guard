@@ -72,6 +72,20 @@ services:
     ports:
       - "8082:8080"
 
+  core:
+      build:
+        context: ./services/core
+        dockerfile: Dockerfile
+      restart: on-failure
+      depends_on:
+        db:
+          condition: service_healthy
+      environment:
+        - DATABASE_URL=postgres://${CORE_DB_USER}:${CORE_DB_PASSWORD}@db:5432/${CORE_DB_NAME}
+        - PORT=8080
+      ports:
+        - "8081:8080"
+
   # anpr:
   #   build:
   #     context: ./services/anpr

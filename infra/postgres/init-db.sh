@@ -18,3 +18,7 @@ EOSQL
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$AUTH_DB_NAME" <<-EOSQL
     GRANT ALL ON SCHEMA public TO $AUTH_DB_USER;
 EOSQL
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$CORE_DB_NAME" <<-EOSQL
+    GRANT ALL ON SCHEMA public TO $CORE_DB_USER;
+EOSQL
