@@ -88,6 +88,16 @@ func seedData() {
 
 		{ID: "read:trips", Name: "Read Trips", Module: "core"},
 		{ID: "create:events", Name: "Create Events", Module: "core"},
+
+		{ID: "read:cameras", Name: "Read Cameras", Module: "core"},
+		{ID: "create:cameras", Name: "Create Cameras", Module: "core"},
+		{ID: "update:cameras", Name: "Update Cameras", Module: "core"},
+		{ID: "delete:cameras", Name: "Delete Cameras", Module: "core"},
+		{ID: "manage:configs", Name: "Manage Configurations", Module: "core"},
+		{ID: "read:presets", Name: "Read Presets", Module: "core"},
+		{ID: "create:presets", Name: "Create Presets", Module: "core"},
+		{ID: "update:presets", Name: "Update Presets", Module: "core"},
+		{ID: "delete:presets", Name: "Delete Presets", Module: "core"},
 	}
 
 	for _, p := range perms {

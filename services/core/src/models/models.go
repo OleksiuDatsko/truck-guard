@@ -5,6 +5,28 @@ import (
 	"time"
 )
 
+type CameraPreset struct {
+	gorm.Model
+	Name         string `json:"name"`
+	Format       string `json:"format"`
+	RunANPR      bool   `json:"run_anpr"`
+	FieldMapping string `json:"field_mapping"`
+}
+
+type CameraConfig struct {
+	gorm.Model
+	CameraID    string `gorm:"uniqueIndex;not null" json:"camera_id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+
+	PresetID *uint         `json:"preset_id"`
+	Preset   *CameraPreset `json:"preset,omitempty"`
+
+	Format       string `json:"format"`
+	RunANPR      *bool  `json:"run_anpr"`
+	FieldMapping string `json:"field_mapping"`
+}
+
 type SystemEvent struct {
 	gorm.Model
 	Type      string    `json:"type"`
