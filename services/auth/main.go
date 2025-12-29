@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"os"
 )
 
 var (
@@ -56,7 +58,11 @@ func main() {
 		admin.GET("/permissions", RequirePermission("read:roles"), HandleListPermissions)
 	}
 
-	r.Run(":8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	r.Run(":" + port)
 }
 
 func seedData() {
@@ -77,7 +83,11 @@ func seedData() {
 		{ID: "create:keys", Name: "Create API Keys", Module: "auth"},
 		{ID: "update:keys", Name: "Update API Keys", Module: "auth"},
 		{ID: "delete:keys", Name: "Delete API Keys", Module: "auth"},
+
 		{ID: "create:ingest", Name: "Create Ingestion Data", Module: "ingestor"},
+
+		{ID: "read:trips", Name: "Read Trips", Module: "core"},
+		{ID: "create:events", Name: "Create Events", Module: "core"},
 	}
 
 	for _, p := range perms {
@@ -90,4 +100,26 @@ func seedData() {
 
 	var operatorRole Role
 	DB.FirstOrCreate(&operatorRole, Role{Name: "operator", Description: "Standard Access"})
+
+	adminUsername := "admin"
+	adminPassword := os.Getenv("ADMIN_DEFAULT_PASSWORD")
+	if adminPassword == "" {
+		adminPassword = "admin123"
+	}
+	var adminUser User
+	err := DB.Where("username = ?", adminUsername).First(&adminUser).Error
+	if err != nil {
+		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
+
+		newAdmin := User{
+			Username:     adminUsername,
+			PasswordHash: string(hashedPassword),
+			RoleID:       adminRole.ID,
+			Role:         adminRole,
+		}
+
+		if createErr := DB.Create(&newAdmin).Error; createErr == nil {
+			println("Successfully created default admin user: admin")
+		}
+	}
 }
