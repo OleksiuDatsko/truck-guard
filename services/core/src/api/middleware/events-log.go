@@ -39,12 +39,16 @@ func SystemEventLogger(eventType string) gin.HandlerFunc {
 		}
 		payloadJSON, _ := json.Marshal(payloadMap)
 
-		repository.DB.Create(&models.SystemEvent{
+		sysEvent := models.SystemEvent{
 			Type:      eventType,
 			SourceID:  sourceID,
 			Payload:   string(payloadJSON),
 			Timestamp: ts,
-		})
+		}
+
+		repository.DB.Create(&sysEvent)
+
+		c.Set("system_event_id", sysEvent.ID)
 
 		c.Next()
 	}

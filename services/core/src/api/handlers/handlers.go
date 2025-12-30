@@ -17,8 +17,16 @@ func HandlePlateEvent(c *gin.Context) {
 		return
 	}
 
-	repository.DB.Create(&event)
-	c.JSON(http.StatusAccepted, gin.H{"status": "processing"})
+	if sysEventID, exists := c.Get("system_event_id"); exists {
+		event.SystemEventID = sysEventID.(uint)
+	}
+
+	if err := repository.DB.Create(&event).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save event"})
+		return
+	}
+	
+	c.JSON(http.StatusAccepted, gin.H{"status": "processing", "id": event.ID})
 }
 
 func HandleWeightEvent(c *gin.Context) {
@@ -29,6 +37,14 @@ func HandleWeightEvent(c *gin.Context) {
 		return
 	}
 
-	repository.DB.Create(&event)
-	c.JSON(http.StatusAccepted, gin.H{"status": "weight_recorded"})
+	if sysEventID, exists := c.Get("system_event_id"); exists {
+		event.SystemEventID = sysEventID.(uint)
+	}
+
+	if err := repository.DB.Create(&event).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record weight"})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{"status": "weight_recorded", "id": event.ID})
 }
