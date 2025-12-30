@@ -7,59 +7,85 @@ from PIL import Image
 
 # Налаштування
 INGESTOR_URL = "http://localhost/ingest"
-DEVICE_ID = "CAM_Lviv_01"
-# API ключ, якщо ви додали перевірку в Ingestor (X-API-Key)
-API_KEY = "2ee2c68870715e719922de095681a018" 
 
-def generate_dummy_image():
-    """Створює просте кольорове зображення в пам'яті."""
+# Конфігурації різних типів камер
+CAMERA_SCENARIOS = [
+    {
+        "id": "CAM_JSON_01",
+        "name": "Lviv Entrance (JSON)",
+        "api_key": "9c4299e1eb796677ae85192ced8e3a3c",
+        "format": "json",
+        "template": lambda plate: json.dumps({
+            "event_type": "plate_recognition",
+            "data": {
+                "plate_number": plate,
+                "confidence": round(random.uniform(0.8, 0.99), 2)
+            },
+            "metadata": {"location": "A1-Entrance"}
+        })
+    },
+    {
+        "id": "CAM_XML_02",
+        "name": "Kyiv Highway (XML)",
+        "api_key": "1e8d1fa6a8e21cc1c9b325f6b4ec2100",
+        "format": "xml",
+        "template": lambda plate: f"""
+        <Event>
+            <DeviceID>XML_CAM_02</DeviceID>
+            <Vehicle>
+                <Plate>{plate}</Plate>
+                <Speed>{random.randint(40, 90)}</Speed>
+            </Vehicle>
+            <Timestamp>{int(time.time())}</Timestamp>
+        </Event>
+        """
+    }
+]
+
+def generate_image():
+    """Створює випадкове зображення."""
     file = io.BytesIO()
-    # Випадковий колір фону для візуальної різниці
     color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-    image = Image.new('RGB', (640, 480), color=color)
+    image = Image.new('RGB', (800, 600), color=color)
     image.save(file, 'jpeg')
     file.seek(0)
     return file
 
-def simulate_event():
-    # Симулюємо дані, які зазвичай шле камера (наприклад, Hikvision)
-    payload = {
-        "timestamp": int(time.time()),
-        "plate_number": f"BC{random.randint(1000, 9999)}AX",
-        "confidence": round(random.uniform(0.75, 0.99), 2),
-        "location": "Checkpoint-1"
-    }
+def send_camera_event(scenario):
+    """Генерує номер та надсилає multipart запит."""
+    plate = f"BC{random.randint(1000, 9999)}HX"
+    payload = scenario["template"](plate)
+    image = generate_image()
 
-    image_file = generate_dummy_image()
-
-    # Підготовка multipart/form-data
-    files = {
-        'image': ('camera_frame.jpg', image_file, 'image/jpeg')
-    }
+    files = {'image': ('frame.jpg', image, 'image/jpeg')}
     data = {
-        'device_id': DEVICE_ID,
-        'payload': json.dumps(payload)
+        'device_id': scenario["id"],
+        'payload': payload
     }
-    headers = {
-        'X-API-Key': API_KEY
-    }
+    headers = {'X-API-Key': scenario["api_key"]}
 
     try:
-        print(f"🚀 Sending event for {payload['plate_number']}...")
-        response = requests.post(INGESTOR_URL, files=files, data=data, headers=headers)
+        print(f"📸 [{scenario['name']}] Sending {plate} in {scenario['format']}...")
+        resp = requests.post(INGESTOR_URL, files=files, data=data, headers=headers, timeout=5)
         
-        if response.status_code == 202:
-            print(f"✅ Accepted: {response.status_code}")
+        if resp.status_code == 202:
+            print(f"  ✅ Accepted (202)")
         else:
-            print(f"❌ Failed: {response.status_code} - {response.text}")
-            
+            print(f"  ❌ Failed ({resp.status_code}): {resp.text}")
     except Exception as e:
-        print(f"🚨 Connection error: {e}")
+        print(f"  🚨 Connection error: {e}")
 
 if __name__ == "__main__":
-    print("📸 Camera Simulator started. Press Ctrl+C to stop.")
-    while True:
-        simulate_event()
-        # Пауза між "проїздами" фур (від 2 до 5 секунд)
-        sleep_time = random.randint(2, 5)
-        time.sleep(sleep_time)
+    print("🚀 Starting Multi-Camera Simulator...")
+    print("Ensure you have created these cameras in Core API first!")
+    
+    try:
+        while True:
+            # Вибираємо випадкову камеру для симуляції події
+            current_camera = random.choice(CAMERA_SCENARIOS)
+            send_camera_event(current_camera)
+            
+            # Пауза між подіями
+            # time.sleep(random.randint(3, 7))
+    except KeyboardInterrupt:
+        print("\n🛑 Simulator stopped.")
