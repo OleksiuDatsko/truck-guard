@@ -53,6 +53,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - PORT=8080
       - REDIS_ADDR=redis:6379
+      - WORKER_SYSTEM_KEY=${WORKER_SYSTEM_KEY}
     ports:
       - "8080:8080"
 
@@ -89,6 +90,26 @@ services:
         - PORT=8080
       ports:
         - "8081:8080"
+
+  adapter-worker:
+    build:
+      context: ./services/adapter-worker
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - CORE_URL=http://gateway/api/v1
+      - ANPR_URL=http://anpr:8000/recognize
+      - REDIS_ADDR=redis:6379
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_BUCKET=${MINIO_BUCKET_NAME}
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - WORKER_API_KEY=${WORKER_SYSTEM_KEY}
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - redis
+      - core
+      - minio
 
   # anpr:
   #   build:

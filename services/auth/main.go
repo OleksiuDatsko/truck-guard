@@ -132,4 +132,24 @@ func seedData() {
 			println("Successfully created default admin user: admin")
 		}
 	}
+
+	workerKey := os.Getenv("WORKER_SYSTEM_KEY")
+	if workerKey != "" {
+		h := HashKey(workerKey)
+		var existingKey APIKey
+		err := DB.Where("key_hash = ?", h).First(&existingKey).Error
+		if err != nil {
+			workerPerms := []Permission{}
+			DB.Where("id IN ?", []string{"manage:configs", "create:events", "read:trips"}).Find(&workerPerms)
+
+			newKey := APIKey{
+				KeyHash:     h,
+				OwnerName:   "System Worker",
+				IsActive:    true,
+				Permissions: workerPerms,
+			}
+			DB.Create(&newKey)
+			println("Successfully seeded System Worker API Key")
+		}
+	}
 }
