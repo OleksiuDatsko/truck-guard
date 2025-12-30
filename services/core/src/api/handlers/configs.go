@@ -73,6 +73,16 @@ func HandleGetConfigByID(c *gin.Context) {
 	c.JSON(http.StatusOK, config)
 }
 
+func HandleGetConfigByCameraID(c *gin.Context) {
+	camID := c.Param("camera_id")
+	var config models.CameraConfig
+	if err := repository.DB.Where("camera_id = ?", camID).First(&config).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Camera config not found"})
+		return
+	}
+	c.JSON(http.StatusOK, config)
+}
+
 func HandleUpdateCamera(c *gin.Context) {
 	id := c.Param("id")
 	var config models.CameraConfig

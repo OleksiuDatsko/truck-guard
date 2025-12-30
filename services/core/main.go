@@ -20,6 +20,7 @@ func main() {
 	api := r.Group("/v1")
 	{
 		api.GET("/cameras/:id", handlers.HandleGetConfigByID)
+		api.GET("/cameras/by-id/:camera_id", handlers.HandleGetConfigByCameraID)
 		configs := api.Group("/configs", middleware.RequireCorePermission("manage:configs"))
 		{
 			configs.GET("/presets", middleware.RequireCorePermission("read:presets"), handlers.HandleListPresets)
