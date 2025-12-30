@@ -29,6 +29,20 @@ func HandlePlateEvent(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"status": "processing", "id": event.ID})
 }
 
+func HandleUpdatePlateEvent(c *gin.Context) {
+    id := c.Param("id")
+    var input struct {
+        PlateCorrected string `json:"plate_corrected"`
+    }
+    if err := c.BindJSON(&input); err != nil { return }
+
+    repository.DB.Model(&models.RawPlateEvent{}).Where("id = ?", id).Updates(map[string]interface{}{
+        "plate_corrected": input.PlateCorrected,
+        "is_manual":      true,
+    })
+    c.Status(200)
+}
+
 func HandleWeightEvent(c *gin.Context) {
 	var event models.RawWeightEvent
 

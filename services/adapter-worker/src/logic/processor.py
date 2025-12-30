@@ -1,5 +1,4 @@
 import json
-from src.config import cfg
 from src.utils.logging_utils import logger
 
 
@@ -14,7 +13,6 @@ class EventProcessor:
     def _get_cached_config(self, camera_id: str):
         if camera_id in self.config_cache:
             return self.config_cache[camera_id]
-
         config = self.core.get_camera_config(camera_id)
         if config:
             self.config_cache[camera_id] = config
@@ -23,6 +21,7 @@ class EventProcessor:
     def process(self, raw_data_str: str):
         data = json.loads(raw_data_str)
         camera_id = data.get("camera_id")
+        image_key = data.get("image_key")
 
         config = self._get_cached_config(camera_id)
         if not config:
@@ -36,17 +35,23 @@ class EventProcessor:
             data.get("payload"), config.get("format"), mapping
         )
 
+        suggestions = []
         if not plate or config.get("run_anpr"):
-            logger.info(f"Running AI recognition for {data.get('image_key')}")
-            #TODO Тут логіка виклику ANPR клієнта
-            pass
+            try:
+                img_bytes = self.minio.get_image(image_key)
+                suggestions = self.anpr.recognize(img_bytes)
+                if suggestions and not plate:
+                    plate = suggestions[0]["plate"]
+            except Exception as e:
+                logger.error(f"AI Recognition failed: {e}")
 
         if plate:
             final_event = {
                 "camera_id": camera_id,
                 "camera_name": config.get("name", camera_id),
                 "plate": plate.upper().replace(" ", ""),
-                "image_key": data.get("image_key"),
+                "suggestions": json.dumps(suggestions), 
+                "image_key": image_key,
                 "timestamp": data.get("at"),
                 "raw_payload": data.get("payload"),
             }

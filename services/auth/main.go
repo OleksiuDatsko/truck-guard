@@ -88,7 +88,7 @@ func seedData() {
 
 		{ID: "read:trips", Name: "Read Trips", Module: "core"},
 		{ID: "create:events", Name: "Create Events", Module: "core"},
-
+		{ID: "update:events", Name: "Update Events", Module: "core"},
 		{ID: "read:cameras", Name: "Read Cameras", Module: "core"},
 		{ID: "create:cameras", Name: "Create Cameras", Module: "core"},
 		{ID: "update:cameras", Name: "Update Cameras", Module: "core"},

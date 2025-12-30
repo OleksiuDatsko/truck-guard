@@ -5,6 +5,8 @@ from src.utils.logging_utils import logger
 from src.clients.core_client import CoreClient
 from src.logic.payload_parser import PayloadParser
 from src.logic.processor import EventProcessor
+from src.clients.minio_client import MinioStorage
+from src.clients.anpr_client import ANPRClient
 
 def main():
     logger.info("Starting Adapter Worker...")
@@ -12,8 +14,10 @@ def main():
     redis = Redis.from_url(f"redis://{cfg.REDIS_ADDR}", decode_responses=True) 
     core = CoreClient()
     parser = PayloadParser()
-    
-    processor = EventProcessor(core, parser, None, None)
+    storage = MinioStorage()  # Тепер це не None
+    anpr = ANPRClient()       # Тепер це не None
+
+    processor = EventProcessor(core, parser, storage, anpr)
 
     last_id = "0"
     while True:

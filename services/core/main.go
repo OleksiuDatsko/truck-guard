@@ -52,6 +52,10 @@ func main() {
 				middleware.SystemEventLogger("weight"),
 				handlers.HandleWeightEvent,
 			)
+			events.PUT("/plate/:id",
+				middleware.RequireCorePermission("update:events"),
+				handlers.HandleUpdatePlateEvent,
+			)
 		}
 	}
 

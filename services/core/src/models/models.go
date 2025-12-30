@@ -37,13 +37,16 @@ type SystemEvent struct {
 
 type RawPlateEvent struct {
 	gorm.Model
-	CameraID      string      `json:"camera_id"`
-	CameraName    string      `json:"camera_name"`
-	Plate         string      `json:"plate"`
-	ImageKey      string      `json:"image_key"`
-	Timestamp     time.Time   `json:"timestamp"`
-	SystemEventID uint        `json:"system_event_id"`
-	SystemEvent   SystemEvent `gorm:"foreignKey:SystemEventID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
+	CameraID       string      `json:"camera_id"`
+	CameraName     string      `json:"camera_name"`
+	Plate          string      `json:"plate"`
+	PlateCorrected string      `json:"plate_corrected"`
+	IsManual       bool        `gorm:"default:false" json:"is_manual"`
+	ImageKey       string      `json:"image_key"`
+	Timestamp      time.Time   `json:"timestamp"`
+	Suggestions    string      `gorm:"type:jsonb" json:"suggestions"`
+	SystemEventID  uint        `json:"system_event_id"`
+	SystemEvent    SystemEvent `gorm:"foreignKey:SystemEventID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 }
 
 type RawWeightEvent struct {

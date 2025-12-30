@@ -111,17 +111,18 @@ services:
       - core
       - minio
 
-  # anpr:
-  #   build:
-  #     context: ./services/anpr
-  #     dockerfile: Dockerfile
-  #   container_name: anpr_service
-  #   restart: unless-stopped
-  #   shm_size: '2gb'
-  #   ports:
-  #     - "8000:8000"
-  #   volumes:
-  #     - nomeroff_models_cache:/root/.nomeroff_net
+  anpr:
+    build:
+      context: ./services/anpr
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - TORCH_FORCE_WEIGHTS_ONLY_LOAD=0
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8000:8000"
+    volumes:
+      - nomeroff_models_cache:/root/.nomeroff_net
 
   redis:
     image: redis:7-alpine
