@@ -1,61 +1,52 @@
 package main
 
 import (
-	"context"
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
+	"github.com/truckguard/auth/src/api/handlers"
+	"github.com/truckguard/auth/src/api/middleware"
+	"github.com/truckguard/auth/src/models"
+	"github.com/truckguard/auth/src/repository"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-)
-
-var (
-	DB  *gorm.DB
-	RDB *redis.Client
-	ctx = context.Background()
 )
 
 func main() {
-	db, _ := gorm.Open(postgres.Open(os.Getenv("DATABASE_URL")), &gorm.Config{})
-	DB = db
-	DB.AutoMigrate(&Permission{}, &Role{}, &User{}, &APIKey{})
-
-	RDB = redis.NewClient(&redis.Options{Addr: os.Getenv("REDIS_ADDR")})
+	repository.InitDB(os.Getenv("DATABASE_URL"))
+	repository.InitRedis(os.Getenv("REDIS_ADDR"))
 
 	seedData()
 
 	r := gin.Default()
 
-	r.POST("/login", HandleLogin)
-	r.GET("/validate", HandleValidate)
+	r.POST("/login", handlers.HandleLogin)
+	r.GET("/validate", handlers.HandleValidate)
 	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
-	r.POST("/register", RequirePermission("create:users"), HandleRegister)
+	r.POST("/register", middleware.RequirePermission("create:users"), handlers.HandleRegister)
 
 	admin := r.Group("/admin")
-	admin.Use(RequirePermission("manage:settings"))
+	admin.Use(middleware.RequirePermission("manage:settings"))
 	{
 		// Користувачі
-		admin.GET("/users", RequirePermission("read:users"), HandleListUsers)
-		admin.PUT("/users/:id/role", RequirePermission("update:users"), HandleUpdateUserRole)
-		admin.DELETE("/users/:id", RequirePermission("delete:users"), HandleDeleteUser)
+		admin.GET("/users", middleware.RequirePermission("read:users"), handlers.HandleListUsers)
+		admin.PUT("/users/:id/role", middleware.RequirePermission("update:users"), handlers.HandleUpdateUserRole)
+		admin.DELETE("/users/:id", middleware.RequirePermission("delete:users"), handlers.HandleDeleteUser)
 
 		// Ролі
-		admin.GET("/roles", RequirePermission("read:roles"), HandleListRoles)
-		admin.POST("/roles", RequirePermission("create:roles"), HandleCreateRole)
-		admin.PUT("/roles/:id", RequirePermission("update:roles"), HandleUpdateRole)
-		admin.DELETE("/roles/:id", RequirePermission("delete:roles"), HandleDeleteRole)
-		admin.POST("/roles/:id/permissions", RequirePermission("update:roles"), HandleAssignPermissionsToRole)
+		admin.GET("/roles", middleware.RequirePermission("read:roles"), handlers.HandleListRoles)
+		admin.POST("/roles", middleware.RequirePermission("create:roles"), handlers.HandleCreateRole)
+		admin.PUT("/roles/:id", middleware.RequirePermission("update:roles"), handlers.HandleUpdateRole)
+		admin.DELETE("/roles/:id", middleware.RequirePermission("delete:roles"), handlers.HandleDeleteRole)
+		admin.POST("/roles/:id/permissions", middleware.RequirePermission("update:roles"), handlers.HandleAssignPermissionsToRole)
 
 		// Ключі (IoT)
-		admin.GET("/keys", RequirePermission("read:keys"), HandleListKeys)
-		admin.POST("/keys", RequirePermission("create:keys"), HandleCreateKeyWithPerms)
-		admin.DELETE("/keys/:id", RequirePermission("delete:keys"), HandleDeleteKey)
-		admin.PUT("/keys/:id/permissions", RequirePermission("update:keys"), HandleAssignPermissionsToKey)
-		admin.PUT("/keys/:id", RequirePermission("update:keys"), HandleUpdateKey)
+		admin.GET("/keys", middleware.RequirePermission("read:keys"), handlers.HandleListKeys)
+		admin.POST("/keys", middleware.RequirePermission("create:keys"), handlers.HandleCreateKeyWithPerms)
+		admin.DELETE("/keys/:id", middleware.RequirePermission("delete:keys"), handlers.HandleDeleteKey)
+		admin.PUT("/keys/:id/permissions", middleware.RequirePermission("update:keys"), handlers.HandleAssignPermissionsToKey)
+		admin.PUT("/keys/:id", middleware.RequirePermission("update:keys"), handlers.HandleUpdateKey)
 
-		admin.GET("/permissions", RequirePermission("read:roles"), HandleListPermissions)
+		admin.GET("/permissions", middleware.RequirePermission("read:roles"), handlers.HandleListPermissions)
 	}
 
 	port := os.Getenv("PORT")
@@ -66,7 +57,7 @@ func main() {
 }
 
 func seedData() {
-	perms := []Permission{
+	perms := []models.Permission{
 		{ID: "read:users", Name: "Read Users", Module: "auth"},
 		{ID: "create:users", Name: "Create Users", Module: "auth"},
 		{ID: "update:users", Name: "Update Users", Module: "auth"},
@@ -101,54 +92,54 @@ func seedData() {
 	}
 
 	for _, p := range perms {
-		DB.FirstOrCreate(&p, Permission{ID: p.ID})
+		repository.DB.FirstOrCreate(&p, models.Permission{ID: p.ID})
 	}
 
-	var adminRole Role
-	DB.FirstOrCreate(&adminRole, Role{Name: "admin", Description: "Full Access"})
-	DB.Model(&adminRole).Association("Permissions").Replace(perms)
+	var adminRole models.Role
+	repository.DB.FirstOrCreate(&adminRole, models.Role{Name: "admin", Description: "Full Access"})
+	repository.DB.Model(&adminRole).Association("Permissions").Replace(perms)
 
-	var operatorRole Role
-	DB.FirstOrCreate(&operatorRole, Role{Name: "operator", Description: "Standard Access"})
+	var operatorRole models.Role
+	repository.DB.FirstOrCreate(&operatorRole, models.Role{Name: "operator", Description: "Standard Access"})
 
 	adminUsername := "admin"
 	adminPassword := os.Getenv("ADMIN_DEFAULT_PASSWORD")
 	if adminPassword == "" {
 		adminPassword = "admin123"
 	}
-	var adminUser User
-	err := DB.Where("username = ?", adminUsername).First(&adminUser).Error
+	var adminUser models.User
+	err := repository.DB.Where("username = ?", adminUsername).First(&adminUser).Error
 	if err != nil {
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
 
-		newAdmin := User{
+		newAdmin := models.User{
 			Username:     adminUsername,
 			PasswordHash: string(hashedPassword),
 			RoleID:       adminRole.ID,
 			Role:         adminRole,
 		}
 
-		if createErr := DB.Create(&newAdmin).Error; createErr == nil {
+		if createErr := repository.DB.Create(&newAdmin).Error; createErr == nil {
 			println("Successfully created default admin user: admin")
 		}
 	}
 
 	workerKey := os.Getenv("WORKER_SYSTEM_KEY")
 	if workerKey != "" {
-		h := HashKey(workerKey)
-		var existingKey APIKey
-		err := DB.Where("key_hash = ?", h).First(&existingKey).Error
+		h := repository.HashKey(workerKey)
+		var existingKey models.APIKey
+		err := repository.DB.Where("key_hash = ?", h).First(&existingKey).Error
 		if err != nil {
-			workerPerms := []Permission{}
-			DB.Where("id IN ?", []string{"manage:configs", "create:events", "read:trips"}).Find(&workerPerms)
+			workerPerms := []models.Permission{}
+			repository.DB.Where("id IN ?", []string{"manage:configs", "create:events", "read:trips"}).Find(&workerPerms)
 
-			newKey := APIKey{
+			newKey := models.APIKey{
 				KeyHash:     h,
 				OwnerName:   "System Worker",
 				IsActive:    true,
 				Permissions: workerPerms,
 			}
-			DB.Create(&newKey)
+			repository.DB.Create(&newKey)
 			println("Successfully seeded System Worker API Key")
 		}
 	}
