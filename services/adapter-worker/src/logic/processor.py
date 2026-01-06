@@ -10,22 +10,22 @@ class EventProcessor:
         self.anpr = anpr_client
         self.config_cache = {}
 
-    def _get_cached_config(self, camera_id: str):
-        if camera_id in self.config_cache:
-            return self.config_cache[camera_id]
-        config = self.core.get_camera_config(camera_id)
+    def _get_cached_config(self, source_id: str):
+        if source_id in self.config_cache:
+            return self.config_cache[source_id]
+        config = self.core.get_camera_config(source_id)
         if config:
-            self.config_cache[camera_id] = config
+            self.config_cache[source_id] = config
         return config
 
     def process(self, raw_data_str: str):
         data = json.loads(raw_data_str)
-        camera_id = data.get("camera_id")
+        source_id = data.get("source_id")
         image_key = data.get("image_key")
 
-        config = self._get_cached_config(camera_id)
+        config = self._get_cached_config(source_id)
         if not config:
-            raise ValueError(f"Config not found for camera {camera_id}")
+            raise ValueError(f"Config not found for source {source_id}")
 
         mapping = config.get("field_mapping", {})
         if isinstance(mapping, str):
@@ -47,8 +47,8 @@ class EventProcessor:
 
         if plate:
             final_event = {
-                "camera_id": camera_id,
-                "camera_name": config.get("name", camera_id),
+                "camera_id": source_id,
+                "camera_name": config.get("name", source_id),
                 "plate": plate.upper().replace(" ", ""),
                 "suggestions": json.dumps(suggestions), 
                 "image_key": image_key,

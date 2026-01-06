@@ -1,11 +1,12 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/truckguard/core/src/api/handlers"
 	"github.com/truckguard/core/src/api/middleware"
 	"github.com/truckguard/core/src/repository"
-	"os"
 )
 
 func main() {

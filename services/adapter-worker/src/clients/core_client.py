@@ -10,14 +10,14 @@ class CoreClient:
             "Content-Type": "application/json"
         }
 
-    def get_camera_config(self, camera_id: str) -> dict | None:
-        url = f"{cfg.CORE_URL}/cameras/by-id/{camera_id}" 
+    def get_camera_config(self, source_id: str) -> dict | None:
+        url = f"{cfg.CORE_URL}/cameras/by-id/{source_id}" 
         try:
             resp = requests.get(url, headers=self.headers, timeout=5)
             if resp.status_code == 200:
                 return resp.json()
         except Exception as e:
-            logger.error(f"Error fetching config for {camera_id}: {e}")
+            logger.error(f"Error fetching config for {source_id}: {e}")
         return None
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=2, max=10))

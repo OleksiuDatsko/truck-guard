@@ -36,7 +36,7 @@ func InitMinio(endpoint, accessKey, secretKey string) {
 	MinioClient = client
 }
 
-func ProcessIncomingEvent(file *multipart.FileHeader, deviceID, payload, camID, camName string) (*models.IngestEvent, error) {
+func ProcessIncomingEvent(file *multipart.FileHeader, deviceID, payload, sourceID, sourceName string) (*models.IngestEvent, error) {
 	objectName := fmt.Sprintf("%s/%s.jpg", time.Now().Format("2006-01-02"), uuid.New().String())
 
 	src, _ := file.Open()
@@ -45,8 +45,8 @@ func ProcessIncomingEvent(file *multipart.FileHeader, deviceID, payload, camID, 
 	_, err := MinioClient.PutObject(ctx, BucketName, objectName, src, file.Size, minio.PutObjectOptions{
 		ContentType: "image/jpeg",
 		UserMetadata: map[string]string{
-			"x-amz-meta-camera-id":   camID,
-			"x-amz-meta-camera-name": camName,
+			"x-amz-meta-source-id":   sourceID,
+			"x-amz-meta-source-name": sourceName,
 		},
 	})
 	if err != nil {
@@ -54,8 +54,8 @@ func ProcessIncomingEvent(file *multipart.FileHeader, deviceID, payload, camID, 
 	}
 
 	event := models.IngestEvent{
-		CameraID:   camID,
-		CameraName: camName,
+		SourceID:   sourceID,
+		SourceName: sourceName,
 		DeviceID:   deviceID,
 		ImageKey:   objectName,
 		Payload:    payload,

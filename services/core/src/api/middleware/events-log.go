@@ -19,7 +19,7 @@ func SystemEventLogger(eventType string) gin.HandlerFunc {
 			return
 		}
 
-		sourceID, _ := body["camera_id"].(string)
+		sourceID, _ := body["source_id"].(string)
 		if sourceID == "" {
 			sourceID, _ = body["scale_id"].(string)
 		}
@@ -33,7 +33,7 @@ func SystemEventLogger(eventType string) gin.HandlerFunc {
 
 		payloadMap := make(map[string]interface{})
 		for k, v := range body {
-			if k != "camera_id" && k != "scale_id" && k != "timestamp" && k != "camera_name" {
+			if k != "source_id" && k != "scale_id" && k != "timestamp" && k != "source_name" {
 				payloadMap[k] = v
 			}
 		}

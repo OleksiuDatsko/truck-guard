@@ -71,9 +71,9 @@ func HandleValidate(c *gin.Context) {
 	k := c.GetHeader("X-API-Key")
 	if k != "" {
 		if meta, valid := repository.ValidateKeyAndGetMetadata(k); valid {
-			c.Header("X-Camera-ID", meta.ID)
-			c.Header("X-Camera-Name", meta.Name)
-			c.Header("X-User-Permissions", strings.Join(meta.Permissions, ","))
+			c.Header("X-Source-ID", meta.ID)
+			c.Header("X-Source-Name", meta.Name)
+			c.Header("X-Permissions", strings.Join(meta.Permissions, ","))
 			c.Status(200)
 			return
 		}
@@ -90,7 +90,7 @@ func HandleValidate(c *gin.Context) {
 
 				perms := repository.GetUserPermissions(userID)
 
-				c.Header("X-User-Permissions", strings.Join(perms, ","))
+				c.Header("X-Permissions", strings.Join(perms, ","))
 				c.Header("X-User-ID", fmt.Sprintf("%d", userID))
 
 				c.Status(200)

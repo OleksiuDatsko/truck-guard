@@ -34,7 +34,7 @@ type APIKey struct {
 	CreatedAt   time.Time    `json:"created_at"`
 }
 
-type CameraMetadata struct {
+type SourceMetadata struct {
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`
 	Permissions []string `json:"permissions"`

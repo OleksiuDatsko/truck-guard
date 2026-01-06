@@ -6,8 +6,8 @@ import (
 )
 
 type IngestEvent struct {
-	CameraID   string    `json:"camera_id"`
-	CameraName string    `json:"camera_name"`
+	SourceID   string    `json:"source_id"`
+	SourceName string    `json:"source_name"`
 	DeviceID   string    `json:"device_id"`
 	ImageKey   string    `json:"image_key"`
 	Payload    string    `json:"payload"`

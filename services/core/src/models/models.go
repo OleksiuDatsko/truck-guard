@@ -1,8 +1,9 @@
 package models
 
 import (
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type CameraPreset struct {
@@ -15,7 +16,7 @@ type CameraPreset struct {
 
 type CameraConfig struct {
 	gorm.Model
-	CameraID    string `gorm:"uniqueIndex;not null" json:"camera_id"`
+	SourceID    string `gorm:"column:camera_id;uniqueIndex;not null" json:"camera_id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 
@@ -37,8 +38,8 @@ type SystemEvent struct {
 
 type RawPlateEvent struct {
 	gorm.Model
-	CameraID       string      `json:"camera_id"`
-	CameraName     string      `json:"camera_name"`
+	SourceID       string      `gorm:"column:camera_id" json:"camera_id"`
+	SourceName     string      `gorm:"column:camera_name" json:"camera_name"`
 	Plate          string      `json:"plate"`
 	PlateCorrected string      `json:"plate_corrected"`
 	IsManual       bool        `gorm:"default:false" json:"is_manual"`

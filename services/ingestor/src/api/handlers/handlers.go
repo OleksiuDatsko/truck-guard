@@ -22,10 +22,10 @@ func HandleIngest(c *gin.Context) {
 	deviceID := c.PostForm("device_id")
 	payload := c.PostForm("payload")
 
-	camID := c.GetHeader("X-Camera-ID")
-	camName := c.GetHeader("X-Camera-Name")
+	sourceID := c.GetHeader("X-Source-ID")
+	sourceName := c.GetHeader("X-Source-Name")
 
-	event, err := repository.ProcessIncomingEvent(file, deviceID, payload, camID, camName)
+	event, err := repository.ProcessIncomingEvent(file, deviceID, payload, sourceID, sourceName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

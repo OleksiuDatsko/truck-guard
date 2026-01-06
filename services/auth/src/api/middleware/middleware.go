@@ -8,7 +8,7 @@ import (
 
 func RequirePermission(requiredPerm string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		permsHeader := c.GetHeader("X-User-Permissions")
+		permsHeader := c.GetHeader("X-Permissions")
 		if permsHeader == "" {
 			c.AbortWithStatusJSON(403, gin.H{"error": "No permissions provided"})
 			return

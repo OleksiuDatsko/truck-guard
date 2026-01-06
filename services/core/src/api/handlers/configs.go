@@ -20,7 +20,7 @@ func HandleCreateCamera(c *gin.Context) {
 
 	authURL := "http://auth:8080/admin/keys"
 	keyRequest := map[string]interface{}{
-		"name":        config.Name + "_key",
+		"name":           config.Name + "_key",
 		"permission_ids": []string{"create:ingest"},
 	}
 
@@ -29,7 +29,7 @@ func HandleCreateCamera(c *gin.Context) {
 	req, _ := http.NewRequest("POST", authURL, bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-User-Id", c.GetHeader("X-User-Id"))
-	req.Header.Set("X-User-Permissions", c.GetHeader("X-User-Permissions"))
+	req.Header.Set("X-Permissions", c.GetHeader("X-Permissions"))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -41,7 +41,7 @@ func HandleCreateCamera(c *gin.Context) {
 	}
 
 	if idVal, ok := authResponse["id"]; ok {
-		config.CameraID = fmt.Sprintf("%v", idVal)
+		config.SourceID = fmt.Sprintf("%v", idVal)
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Auth service did not return an ID"})
 		return
@@ -64,9 +64,9 @@ func HandleGetCameras(c *gin.Context) {
 }
 
 func HandleGetConfigByID(c *gin.Context) {
-	camID := c.Param("id")
+	sourceID := c.Param("id")
 	var config models.CameraConfig
-	if err := repository.DB.Where("id = ?", camID).First(&config).Error; err != nil {
+	if err := repository.DB.Where("id = ?", sourceID).First(&config).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Camera config not found"})
 		return
 	}
@@ -74,9 +74,9 @@ func HandleGetConfigByID(c *gin.Context) {
 }
 
 func HandleGetConfigByCameraID(c *gin.Context) {
-	camID := c.Param("camera_id")
+	sourceID := c.Param("camera_id")
 	var config models.CameraConfig
-	if err := repository.DB.Where("camera_id = ?", camID).First(&config).Error; err != nil {
+	if err := repository.DB.Where("camera_id = ?", sourceID).First(&config).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Camera config not found"})
 		return
 	}

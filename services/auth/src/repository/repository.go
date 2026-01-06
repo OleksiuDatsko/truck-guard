@@ -51,11 +51,11 @@ func GenerateToken(user models.User) (string, error) {
 	return token.SignedString(JWTSecret)
 }
 
-func ValidateKeyAndGetMetadata(key string) (models.CameraMetadata, bool) {
+func ValidateKeyAndGetMetadata(key string) (models.SourceMetadata, bool) {
 	h := HashKey(key)
 
 	if v, _ := RDB.Get(ctx, "auth:"+h).Result(); v != "" {
-		var meta models.CameraMetadata
+		var meta models.SourceMetadata
 		json.Unmarshal([]byte(v), &meta)
 		return meta, true
 	}
@@ -67,7 +67,7 @@ func ValidateKeyAndGetMetadata(key string) (models.CameraMetadata, bool) {
 			perms = append(perms, p.ID)
 		}
 
-		meta := models.CameraMetadata{
+		meta := models.SourceMetadata{
 			ID:          fmt.Sprintf("%d", ak.ID),
 			Name:        ak.OwnerName,
 			Permissions: perms,
@@ -78,7 +78,7 @@ func ValidateKeyAndGetMetadata(key string) (models.CameraMetadata, bool) {
 		return meta, true
 	}
 
-	return models.CameraMetadata{}, false
+	return models.SourceMetadata{}, false
 }
 
 func GetUserPermissions(userID uint) []string {

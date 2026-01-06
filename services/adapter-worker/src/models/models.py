@@ -11,7 +11,7 @@ class CameraConfig:
 
 @dataclass
 class IncomingEvent:
-    camera_id: str
+    source_id: str
     image_key: str
     payload: str
     timestamp: str
