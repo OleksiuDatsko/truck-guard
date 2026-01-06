@@ -1,0 +1,700 @@
+openapi: 3.1.0
+info:
+  title: "TruckGuard API"
+  version: "1.0.0"
+  description: "TruckGuard vehicle tracking system - Microservices Documentation"
+  x-logo-url: "https://truckguard.logo"
+
+servers:
+  - url: http://localhost:80
+    description: Dev Gateway (Nginx)
+  - url: https://api.truckguard.ua
+    description: Production Gateway
+
+tags:
+  - name: Auth
+    description: User authentication and session management
+  - name: Admin
+    description: Administrative operations for users, roles, and API keys
+  - name: Cameras
+    description: Camera configuration and discovery
+  - name: Configs
+    description: System configurations and presets
+  - name: Events
+    description: Processing vehicle events (plates, weights)
+  - name: Ingestor
+    description: Raw data ingestion from devices
+
+security:
+  - bearerAuth: []
+  - apiKey: []
+
+paths:
+  # --- Auth Service ---
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login to the system
+      description: Authenticate with username and password to receive a JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        200:
+          description: Successfully authenticated
+          content:
+            application/json:
+              example: { token: "eyJhbG..." }
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: Create a new user account. Requires 'create:users' permission.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password, role_id]
+              properties:
+                username: { type: string }
+                password: { type: string }
+                role_id: { type: integer }
+      responses:
+        201:
+          description: User created
+        403:
+          $ref: '#/components/responses/Forbidden'
+
+  /auth/validate:
+    get:
+      tags: [Auth]
+      summary: Validate token or API Key
+      description: Verification endpoint used by Gateway to check access.
+      responses:
+        200:
+          description: Token is valid
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/health:
+    get:
+      tags: [Auth]
+      summary: Health check
+      responses:
+        200:
+          description: Service is healthy
+
+  # --- Auth Admin ---
+  /auth/admin/users:
+    get:
+      tags: [Admin]
+      summary: List all users
+      security: [{ bearerAuth: [] }]
+      responses:
+        200:
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
+
+  /auth/admin/users/{id}/role:
+    put:
+      tags: [Admin]
+      summary: Update user role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role_id]
+              properties:
+                role_id: { type: integer }
+      responses:
+        200:
+          description: Role updated
+
+  /auth/admin/users/{id}:
+    delete:
+      tags: [Admin]
+      summary: Delete user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: User deleted
+
+  /auth/admin/roles:
+    get:
+      tags: [Admin]
+      summary: List all roles
+      security: [{ bearerAuth: [] }]
+      responses:
+        200:
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Role' }
+    post:
+      tags: [Admin]
+      summary: Create a new role
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Role' }
+      responses:
+        201:
+          description: Role created
+
+  /auth/admin/roles/{id}:
+    put:
+      tags: [Admin]
+      summary: Update role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Role' }
+      responses:
+        200:
+          description: Role updated
+    delete:
+      tags: [Admin]
+      summary: Delete role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Role deleted
+
+  /auth/admin/roles/{id}/permissions:
+    post:
+      tags: [Admin]
+      summary: Assign permissions to role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { type: string }
+      responses:
+        200:
+          description: Permissions assigned
+
+  /auth/admin/keys:
+    get:
+      tags: [Admin]
+      summary: List API Keys
+      security: [{ bearerAuth: [] }]
+      responses:
+        200:
+          description: List of keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/APIKey' }
+    post:
+      tags: [Admin]
+      summary: Create a new API Key
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [owner_name, permissionIDs]
+              properties:
+                owner_name: { type: string }
+                permissionIDs:
+                  type: array
+                  items: { type: string }
+      responses:
+        201:
+          description: Key created
+          content:
+            application/json:
+              example: { key: "tg_...", id: 5 }
+
+  /auth/admin/keys/{id}:
+    put:
+      tags: [Admin]
+      summary: Update API key
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                owner_name: { type: string }
+                is_active: { type: boolean }
+      responses:
+        200:
+          description: Key updated
+    delete:
+      tags: [Admin]
+      summary: Delete API key
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Key deleted
+
+  /auth/admin/keys/{id}/permissions:
+    put:
+      tags: [Admin]
+      summary: Assign permissions to key
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { type: string }
+      responses:
+        200:
+          description: Permissions assigned
+
+  /auth/admin/permissions:
+    get:
+      tags: [Admin]
+      summary: List all permissions
+      responses:
+        200:
+          description: List of permissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Permission' }
+
+  # --- Core Service ---
+  /api/health:
+    get:
+      tags: [Configs]
+      summary: Core Health check
+      responses:
+        200:
+          description: Service is healthy
+
+  /api/v1/cameras/{id}:
+    get:
+      tags: [Cameras]
+      summary: Get camera config by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Camera config
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CameraConfig' }
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/cameras/by-id/{camera_id}:
+    get:
+      tags: [Cameras]
+      summary: Get camera config by Source ID
+      parameters:
+        - name: camera_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Camera config
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CameraConfig' }
+
+  /api/v1/configs/presets:
+    get:
+      tags: [Configs]
+      summary: List camera presets
+      responses:
+        200:
+          description: List of presets
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CameraPreset' }
+    post:
+      tags: [Configs]
+      summary: Create camera preset
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CameraPreset' }
+      responses:
+        201:
+          description: Preset created
+
+  /api/v1/configs/presets/{id}:
+    get:
+      tags: [Configs]
+      summary: Get preset by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Preset details
+    put:
+      tags: [Configs]
+      summary: Update preset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CameraPreset' }
+      responses:
+        200:
+          description: Preset updated
+    delete:
+      tags: [Configs]
+      summary: Delete preset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Preset deleted
+
+  /api/v1/configs/cameras:
+    get:
+      tags: [Configs]
+      summary: List all cameras
+      responses:
+        200:
+          description: List of cameras
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CameraConfig' }
+    post:
+      tags: [Configs]
+      summary: Register a new camera
+      description: Create a camera and automatically provision an API Key.
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CameraConfig' }
+      responses:
+        201:
+          description: Camera registered
+
+  /api/v1/configs/cameras/{id}:
+    put:
+      tags: [Configs]
+      summary: Update camera config
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CameraConfig' }
+      responses:
+        200:
+          description: Camera updated
+    delete:
+      tags: [Configs]
+      summary: Delete camera config
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Camera deleted
+
+  /api/v1/events/plate:
+    post:
+      tags: [Events]
+      summary: Submit a plate recognition event
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RawPlateEvent' }
+      responses:
+        202:
+          description: Event accepted for processing
+          content:
+            application/json:
+              example: { status: "processing", message: "Event queued" }
+
+  /api/v1/events/plate/{id}:
+    put:
+      tags: [Events]
+      summary: Update plate event (manual correction)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plate_corrected: { type: string }
+      responses:
+        200:
+          description: Event updated
+
+  /api/v1/events/weight:
+    post:
+      tags: [Events]
+      summary: Submit a weight scale event
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RawWeightEvent' }
+      responses:
+        202:
+          description: Event accepted
+
+  # --- Ingestor Service ---
+  /ingest:
+    post:
+      tags: [Ingestor]
+      summary: Ingest raw device data
+      description: Endpoint for cameras/devices to upload images and metadata.
+      parameters:
+        - name: X-Source-ID
+          in: header
+          required: true
+          schema: { type: string }
+        - name: X-Source-Name
+          in: header
+          schema: { type: string }
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image, device_id]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                device_id: { type: string }
+                payload:
+                  type: string
+                  description: JSON or XML string depending on device
+      responses:
+        202:
+          description: Data ingested successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IngestEvent' }
+
+  # --- ANPR Service ---
+  /anpr/recognize:
+    post:
+      tags: [Events]
+      summary: Recognize license plate from image
+      description: Forward image to ANPR engine for recognition.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Recognition result
+          content:
+            application/json:
+              example: { plate: "AA1234BB", confidence: 0.98 }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - Invalid or missing credentials
+      content:
+        application/json:
+          example: { error: "unauthorized" }
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+    NotFound:
+      description: Resource not found
+    InternalError:
+      description: Internal Server Error
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        role_id: { type: integer }
+        role: { $ref: '#/components/schemas/Role' }
+        created_at: { type: string, format: date-time }
+
+    Role:
+      type: object
+      required: [name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        permissions:
+          type: array
+          items: { $ref: '#/components/schemas/Permission' }
+
+    Permission:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        module: { type: string }
+
+    APIKey:
+      type: object
+      properties:
+        id: { type: integer }
+        owner_name: { type: string }
+        is_active: { type: boolean }
+        permissions:
+          type: array
+          items: { $ref: '#/components/schemas/Permission' }
+        created_at: { type: string, format: date-time }
+
+    CameraConfig:
+      type: object
+      required: [camera_id, name, format]
+      properties:
+        id: { type: integer }
+        camera_id: { type: string, description: "Source Identification String" }
+        name: { type: string }
+        description: { type: string }
+        preset_id: { type: integer }
+        format:
+          type: string
+          enum: [xml, json]
+        run_anpr: { type: boolean }
+        field_mapping: { type: string, description: "JSON mapping for payload fields" }
+
+    CameraPreset:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        format: { type: string, enum: [xml, json] }
+        run_anpr: { type: boolean }
+        field_mapping: { type: string }
+
+    RawPlateEvent:
+      type: object
+      required: [camera_id, plate, timestamp]
+      properties:
+        camera_id: { type: string }
+        camera_name: { type: string }
+        plate: { type: string }
+        plate_corrected: { type: string }
+        is_manual: { type: boolean }
+        image_key: { type: string }
+        timestamp: { type: string, format: date-time }
+        suggestions: { type: string, description: "JSONB suggestions from ANPR" }
+
+    RawWeightEvent:
+      type: object
+      required: [scale_id, weight, timestamp]
+      properties:
+        scale_id: { type: string }
+        weight: { type: number, format: float }
+        timestamp: { type: string, format: date-time }
+
+    IngestEvent:
+      type: object
+      properties:
+        source_id: { type: string }
+        source_name: { type: string }
+        device_id: { type: string }
+        image_key: { type: string }
+        payload: { type: string }
+        at: { type: string, format: date-time }
