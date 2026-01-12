@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/truckguard/core/src/api/clients"
 	"github.com/truckguard/core/src/models"
 	"github.com/truckguard/core/src/repository"
 	"github.com/truckguard/core/src/utils"
@@ -19,42 +18,30 @@ func HandleCreateCamera(c *gin.Context) {
 		return
 	}
 
-	authURL := "http://auth:8080/admin/keys"
-	keyRequest := map[string]interface{}{
-		"name":           config.Name + "_key",
-		"permission_ids": []string{"create:ingest"},
-	}
+	authClient := clients.NewAuthClient()
+	authResp, err := authClient.CreateApiKey(
+		c.Request.Context(),
+		config.Name+"_key",
+		[]string{"create:ingest"},
+		c.GetHeader("Authorization"),
+		c.GetHeader("X-Api-Key"),
+	)
 
-	jsonData, _ := json.Marshal(keyRequest)
-
-	req, _ := http.NewRequest("POST", authURL, bytes.NewBuffer(jsonData))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-User-Id", c.GetHeader("X-User-Id"))
-	req.Header.Set("X-Permissions", c.GetHeader("X-Permissions"))
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-
-	var authResponse map[string]interface{}
-	if err == nil {
-		defer resp.Body.Close()
-		json.NewDecoder(resp.Body).Decode(&authResponse)
-	}
-
-	if idVal, ok := authResponse["id"]; ok {
-		config.SourceID = fmt.Sprintf("%v", idVal)
-	} else {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Auth service did not return an ID"})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create authentication key: " + err.Error()})
 		return
 	}
+
+	config.SourceID = fmt.Sprintf("%v", authResp.ID)
+
 	if err := repository.DB.Create(&config).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create camera config"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save camera configuration"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"camera":  config,
-		"api_key": authResponse["api_key"],
+		"api_key": authResp.APIKey,
 	})
 }
 

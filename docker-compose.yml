@@ -90,6 +90,7 @@ services:
     environment:
       - DATABASE_URL=postgres://${CORE_DB_USER}:${CORE_DB_PASSWORD}@db:5432/${CORE_DB_NAME}
       - PORT=8080
+      - AUTH_SERVICE_URL=http://gateway/auth
     ports:
       - "8081:8080"
 
