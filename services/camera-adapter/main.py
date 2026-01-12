@@ -14,8 +14,8 @@ def main():
     redis = Redis.from_url(f"redis://{cfg.REDIS_ADDR}", decode_responses=True) 
     core = CoreClient()
     parser = PayloadParser()
-    storage = MinioStorage()  # Тепер це не None
-    anpr = ANPRClient()       # Тепер це не None
+    storage = MinioStorage()  
+    anpr = ANPRClient()
 
     processor = EventProcessor(core, parser, storage, anpr)
 
