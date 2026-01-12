@@ -9,7 +9,7 @@ from PIL import Image
 # Configuration
 BASE_URL = os.getenv("BASE_URL", "http://localhost")
 AUTH_URL = f"{BASE_URL}/auth"
-CORE_API_URL = f"{BASE_URL}/api/v1"
+CORE_API_URL = f"{BASE_URL}/api"
 INGEST_URL = f"{BASE_URL}/ingest"
 
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
@@ -81,7 +81,7 @@ def setup_camera(token, scenario):
         resp = requests.get(f"{CORE_API_URL}/configs/cameras", headers=headers, timeout=5)
         if resp.status_code == 200:
             cameras = resp.json()
-            for cam in cameras:
+            for cam in cameras.get("data", []):
                 if cam.get("name") == camera_name:
                     cam_id = cam.get("ID") or cam.get("id")
                     if cam_id:
@@ -174,7 +174,7 @@ def main():
         while True:
             current_camera = random.choice(active_scenarios)
             send_camera_event(current_camera, current_camera["api_key"])
-            time.sleep(random.randint(3, 7))
+            # time.sleep(random.randint(3, 7))
     except KeyboardInterrupt:
         print("\n🛑 Simulator stopped.")
 

@@ -48,12 +48,16 @@ func HandlePatchPlateEvent(c *gin.Context) {
 
 func HandleGetPlateEvents(c *gin.Context) {
 	var events []models.RawPlateEvent
-	limit, offset := utils.GetPagination(c)
+	var total int64
+	limit, offset, page := utils.GetPagination(c)
+
+	repository.DB.Model(&models.RawPlateEvent{}).Count(&total)
+
 	if err := repository.DB.Limit(limit).Offset(offset).Order("created_at desc").Find(&events).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch events"})
 		return
 	}
-	c.JSON(http.StatusOK, events)
+	utils.SendPaginatedResponse(c, events, total, page, limit)
 }
 
 func HandleGetPlateEventByID(c *gin.Context) {
@@ -88,12 +92,16 @@ func HandleWeightEvent(c *gin.Context) {
 
 func HandleGetWeightEvents(c *gin.Context) {
 	var events []models.RawWeightEvent
-	limit, offset := utils.GetPagination(c)
+	var total int64
+	limit, offset, page := utils.GetPagination(c)
+
+	repository.DB.Model(&models.RawWeightEvent{}).Count(&total)
+
 	if err := repository.DB.Limit(limit).Offset(offset).Order("created_at desc").Find(&events).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch weight events"})
 		return
 	}
-	c.JSON(http.StatusOK, events)
+	utils.SendPaginatedResponse(c, events, total, page, limit)
 }
 
 func HandleGetWeightEventByID(c *gin.Context) {
@@ -108,12 +116,16 @@ func HandleGetWeightEventByID(c *gin.Context) {
 
 func HandleGetSystemEvents(c *gin.Context) {
 	var events []models.SystemEvent
-	limit, offset := utils.GetPagination(c)
+	var total int64
+	limit, offset, page := utils.GetPagination(c)
+
+	repository.DB.Model(&models.SystemEvent{}).Count(&total)
+
 	if err := repository.DB.Limit(limit).Offset(offset).Order("created_at desc").Find(&events).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch system events"})
 		return
 	}
-	c.JSON(http.StatusOK, events)
+	utils.SendPaginatedResponse(c, events, total, page, limit)
 }
 
 func HandleGetSystemEventByID(c *gin.Context) {

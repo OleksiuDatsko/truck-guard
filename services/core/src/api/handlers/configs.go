@@ -60,9 +60,13 @@ func HandleCreateCamera(c *gin.Context) {
 
 func HandleGetCameras(c *gin.Context) {
 	var configs []models.CameraConfig
-	limit, offset := utils.GetPagination(c)
+	var total int64
+	limit, offset, page := utils.GetPagination(c)
+
+	repository.DB.Model(&models.CameraConfig{}).Count(&total)
 	repository.DB.Limit(limit).Offset(offset).Find(&configs)
-	c.JSON(http.StatusOK, configs)
+
+	utils.SendPaginatedResponse(c, configs, total, page, limit)
 }
 
 func HandleGetConfigByID(c *gin.Context) {
@@ -108,6 +112,7 @@ func HandleUpdateCamera(c *gin.Context) {
 }
 
 func HandleDeleteCamera(c *gin.Context) {
+	// TODO: also delete api key from auth service
 	id := c.Param("id")
 	repository.DB.Delete(&models.CameraConfig{}, id)
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})

@@ -99,7 +99,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      - CORE_URL=http://gateway/api/v1
+      - CORE_URL=http://gateway/api
       - ANPR_URL=http://anpr:8000/recognize
       - REDIS_ADDR=redis:6379
       - MINIO_ENDPOINT=minio:9000

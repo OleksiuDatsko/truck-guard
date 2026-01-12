@@ -18,7 +18,7 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	api := r.Group("/v1")
+	api := r.Group("/")
 	{
 		api.GET("/cameras/:id", handlers.HandleGetConfigByID)
 		api.GET("/cameras/by-id/:camera_id", handlers.HandleGetConfigByCameraID)

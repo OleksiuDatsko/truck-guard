@@ -327,7 +327,7 @@ paths:
         200:
           description: Service is healthy
 
-  /api/v1/cameras/{id}:
+  /api/cameras/{id}:
     get:
       tags: [Cameras]
       summary: Get camera config by ID
@@ -345,7 +345,7 @@ paths:
         404:
           $ref: '#/components/responses/NotFound'
 
-  /api/v1/cameras/by-id/{camera_id}:
+  /api/cameras/by-id/{camera_id}:
     get:
       tags: [Cameras]
       summary: Get camera config by Source ID
@@ -361,7 +361,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/CameraConfig' }
 
-  /api/v1/configs/presets:
+  /api/configs/presets:
     get:
       tags: [Configs]
       summary: List camera presets
@@ -384,7 +384,7 @@ paths:
         201:
           description: Preset created
 
-  /api/v1/configs/presets/{id}:
+  /api/configs/presets/{id}:
     get:
       tags: [Configs]
       summary: Get preset by ID
@@ -423,7 +423,7 @@ paths:
         204:
           description: Preset deleted
 
-  /api/v1/configs/cameras:
+  /api/configs/cameras:
     get:
       tags: [Configs]
       summary: List all cameras
@@ -440,8 +440,12 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items: { $ref: '#/components/schemas/CameraConfig' }
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/CameraConfig' }
+                  metadata: { $ref: '#/components/schemas/PaginationMetadata' }
     post:
       tags: [Configs]
       summary: Register a new camera
@@ -454,7 +458,7 @@ paths:
         201:
           description: Camera registered
 
-  /api/v1/configs/cameras/{id}:
+  /api/configs/cameras/{id}:
     put:
       tags: [Configs]
       summary: Update camera config
@@ -482,7 +486,7 @@ paths:
         204:
           description: Camera deleted
 
-  /api/v1/events/plate:
+  /api/events/plate:
     get:
       tags: [Events]
       summary: List plate recognition events
@@ -499,8 +503,12 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items: { $ref: '#/components/schemas/RawPlateEvent' }
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/RawPlateEvent' }
+                  metadata: { $ref: '#/components/schemas/PaginationMetadata' }
     post:
       tags: [Events]
       summary: Submit a plate recognition event
@@ -515,7 +523,7 @@ paths:
             application/json:
               example: { status: "processing", message: "Event queued" }
 
-  /api/v1/events/plate/{id}:
+  /api/events/plate/{id}:
     get:
       tags: [Events]
       summary: Get plate event by ID
@@ -551,7 +559,7 @@ paths:
         200:
           description: Event updated
 
-  /api/v1/events/weight:
+  /api/events/weight:
     get:
       tags: [Events]
       summary: List weight events
@@ -568,8 +576,12 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items: { $ref: '#/components/schemas/RawWeightEvent' }
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/RawWeightEvent' }
+                  metadata: { $ref: '#/components/schemas/PaginationMetadata' }
     post:
       tags: [Events]
       summary: Submit a weight scale event
@@ -581,7 +593,7 @@ paths:
         202:
           description: Event accepted
 
-  /api/v1/events/weight/{id}:
+  /api/events/weight/{id}:
     get:
       tags: [Events]
       summary: Get weight event by ID
@@ -599,7 +611,7 @@ paths:
         404:
           $ref: '#/components/responses/NotFound'
 
-  /api/v1/events/system:
+  /api/events/system:
     get:
       tags: [Events]
       summary: List system events
@@ -616,10 +628,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items: { $ref: '#/components/schemas/SystemEvent' }
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/SystemEvent' }
+                  metadata: { $ref: '#/components/schemas/PaginationMetadata' }
 
-  /api/v1/events/system/{id}:
+  /api/events/system/{id}:
     get:
       tags: [Events]
       summary: Get system event by ID
@@ -827,4 +843,10 @@ components:
         device_id: { type: string }
         image_key: { type: string }
         payload: { type: string }
-        at: { type: string, format: date-time }
+    PaginationMetadata:
+      type: object
+      properties:
+        total_items: { type: integer }
+        total_pages: { type: integer }
+        current_page: { type: integer }
+        limit: { type: integer }

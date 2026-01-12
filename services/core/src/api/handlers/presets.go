@@ -1,16 +1,22 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/truckguard/core/src/models"
 	"github.com/truckguard/core/src/repository"
-	"net/http"
+	"github.com/truckguard/core/src/utils"
 )
 
 func HandleListPresets(c *gin.Context) {
 	var presets []models.CameraPreset
-	repository.DB.Find(&presets)
-	c.JSON(http.StatusOK, presets)
+	var total int64
+	repository.DB.Model(&models.CameraPreset{}).Count(&total)
+
+	limit, offset, page := utils.GetPagination(c)
+	repository.DB.Limit(limit).Offset(offset).Find(&presets)
+	utils.SendPaginatedResponse(c, presets, total, page, limit)
 }
 
 func HandleGetPreset(c *gin.Context) {
