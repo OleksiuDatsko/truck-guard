@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/truckguard/core/src/models"
 	"github.com/truckguard/core/src/repository"
+	"github.com/truckguard/core/src/utils"
 )
 
 func HandleCreateCamera(c *gin.Context) {
@@ -59,7 +60,8 @@ func HandleCreateCamera(c *gin.Context) {
 
 func HandleGetCameras(c *gin.Context) {
 	var configs []models.CameraConfig
-	repository.DB.Find(&configs)
+	limit, offset := utils.GetPagination(c)
+	repository.DB.Limit(limit).Offset(offset).Find(&configs)
 	c.JSON(http.StatusOK, configs)
 }
 

@@ -55,6 +55,7 @@ services:
       - PORT=8080
       - REDIS_ADDR=redis:6379
       - WORKER_SYSTEM_KEY=${WORKER_SYSTEM_KEY}
+      - ADMIN_DEFAULT_PASSWORD=${ADMIN_DEFAULT_PASSWORD}
     ports:
       - "8080:8080"
 

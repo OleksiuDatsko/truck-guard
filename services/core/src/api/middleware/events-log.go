@@ -19,9 +19,9 @@ func SystemEventLogger(eventType string) gin.HandlerFunc {
 			return
 		}
 
-		sourceID, _ := body["source_id"].(string)
+		sourceID := c.GetHeader("X-Source-ID")
 		if sourceID == "" {
-			sourceID, _ = body["scale_id"].(string)
+			sourceID = c.GetHeader("X-Scale-ID")
 		}
 
 		ts := time.Now()
@@ -31,13 +31,7 @@ func SystemEventLogger(eventType string) gin.HandlerFunc {
 			}
 		}
 
-		payloadMap := make(map[string]interface{})
-		for k, v := range body {
-			if k != "source_id" && k != "scale_id" && k != "timestamp" && k != "source_name" {
-				payloadMap[k] = v
-			}
-		}
-		payloadJSON, _ := json.Marshal(payloadMap)
+		payloadJSON, _ := json.Marshal(body)
 
 		sysEvent := models.SystemEvent{
 			Type:      eventType,

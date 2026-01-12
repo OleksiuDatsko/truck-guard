@@ -43,20 +43,29 @@ func main() {
 
 		events := api.Group("/events")
 		{
+			events.GET("/plate", middleware.RequireCorePermission("read:events"), handlers.HandleGetPlateEvents)
+			events.GET("/plate/:id", middleware.RequireCorePermission("read:events"), handlers.HandleGetPlateEventByID)
 			events.POST("/plate",
 				middleware.RequireCorePermission("create:events"),
 				middleware.SystemEventLogger("plate"),
 				handlers.HandlePlateEvent,
 			)
+
+			events.GET("/weight", middleware.RequireCorePermission("read:events"), handlers.HandleGetWeightEvents)
+			events.GET("/weight/:id", middleware.RequireCorePermission("read:events"), handlers.HandleGetWeightEventByID)
 			events.POST("/weight",
 				middleware.RequireCorePermission("create:events"),
 				middleware.SystemEventLogger("weight"),
 				handlers.HandleWeightEvent,
 			)
-			events.PUT("/plate/:id",
+
+			events.PATCH("/plate/:id",
 				middleware.RequireCorePermission("update:events"),
-				handlers.HandleUpdatePlateEvent,
+				handlers.HandlePatchPlateEvent,
 			)
+
+			events.GET("/system", middleware.RequireCorePermission("read:events"), handlers.HandleGetSystemEvents)
+			events.GET("/system/:id", middleware.RequireCorePermission("read:events"), handlers.HandleGetSystemEventByID)
 		}
 	}
 

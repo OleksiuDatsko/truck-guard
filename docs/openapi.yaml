@@ -427,6 +427,13 @@ paths:
     get:
       tags: [Configs]
       summary: List all cameras
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
       responses:
         200:
           description: List of cameras
@@ -476,6 +483,24 @@ paths:
           description: Camera deleted
 
   /api/v1/events/plate:
+    get:
+      tags: [Events]
+      summary: List plate recognition events
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        200:
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/RawPlateEvent' }
     post:
       tags: [Events]
       summary: Submit a plate recognition event
@@ -491,7 +516,23 @@ paths:
               example: { status: "processing", message: "Event queued" }
 
   /api/v1/events/plate/{id}:
-    put:
+    get:
+      tags: [Events]
+      summary: Get plate event by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Event details
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RawPlateEvent' }
+        404:
+          $ref: '#/components/responses/NotFound'
+    patch:
       tags: [Events]
       summary: Update plate event (manual correction)
       parameters:
@@ -511,6 +552,24 @@ paths:
           description: Event updated
 
   /api/v1/events/weight:
+    get:
+      tags: [Events]
+      summary: List weight events
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        200:
+          description: List of weight events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/RawWeightEvent' }
     post:
       tags: [Events]
       summary: Submit a weight scale event
@@ -521,6 +580,62 @@ paths:
       responses:
         202:
           description: Event accepted
+
+  /api/v1/events/weight/{id}:
+    get:
+      tags: [Events]
+      summary: Get weight event by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Weight event details
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RawWeightEvent' }
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/events/system:
+    get:
+      tags: [Events]
+      summary: List system events
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        200:
+          description: List of system events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SystemEvent' }
+
+  /api/v1/events/system/{id}:
+    get:
+      tags: [Events]
+      summary: Get system event by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: System event details
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SystemEvent' }
+        404:
+          $ref: '#/components/responses/NotFound'
 
   # --- Ingestor Service ---
   /ingest:
@@ -672,6 +787,7 @@ components:
       type: object
       required: [camera_id, plate, timestamp]
       properties:
+        id: { type: integer }
         camera_id: { type: string }
         camera_name: { type: string }
         plate: { type: string }
@@ -680,13 +796,27 @@ components:
         image_key: { type: string }
         timestamp: { type: string, format: date-time }
         suggestions: { type: string, description: "JSONB suggestions from ANPR" }
+        system_event_id: { type: integer }
+        system_event: { $ref: '#/components/schemas/SystemEvent' }
 
     RawWeightEvent:
       type: object
       required: [scale_id, weight, timestamp]
       properties:
+        id: { type: integer }
         scale_id: { type: string }
         weight: { type: number, format: float }
+        timestamp: { type: string, format: date-time }
+        system_event_id: { type: integer }
+        system_event: { $ref: '#/components/schemas/SystemEvent' }
+
+    SystemEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { type: string }
+        source_id: { type: string }
+        payload: { type: string }
         timestamp: { type: string, format: date-time }
 
     IngestEvent:
