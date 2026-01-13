@@ -67,9 +67,35 @@ def get_admin_token():
         print(f"🚨 Connection error during login: {e}")
         return None
 
-def setup_camera(token, scenario):
+def get_or_create_gate(token, gate_name="Main Entrance"):
+    """Finds or creates a Gate in the Core API."""
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        resp = requests.get(f"{CORE_API_URL}/configs/gates", headers=headers, timeout=5)
+        if resp.status_code == 200:
+            gates = resp.json()
+            for gate in gates:
+                if gate.get("name") == gate_name:
+                    print(f"📍 Found existing Gate: {gate_name} (ID: {gate['ID']})")
+                    return gate["ID"]
+        
+        # Create if not found
+        payload = {"name": gate_name, "description": "Auto-created by simulator"}
+        resp = requests.post(f"{CORE_API_URL}/configs/gates", json=payload, headers=headers, timeout=5)
+        if resp.status_code == 201:
+            gate = resp.json()
+            print(f"🆕 Created new Gate: {gate_name} (ID: {gate['ID']})")
+            return gate["ID"]
+        else:
+            print(f"❌ Failed to create Gate: {resp.status_code} {resp.text}")
+            return None
+    except Exception as e:
+        print(f"🚨 Error during gate setup: {e}")
+        return None
+
+def setup_camera(token, scenario, gate_id=None):
     """
-    Ensures camera exists in Core API. 
+    Ensures camera exists in Core API and links it to a gate. 
     Returns the API Key for ingestion.
     """
     headers = {"Authorization": f"Bearer {token}"}
@@ -77,7 +103,6 @@ def setup_camera(token, scenario):
     
     try:
         # 1. Clean up existing camera with same name to get a fresh API Key
-        # (API Key is only returned on creation)
         resp = requests.get(f"{CORE_API_URL}/configs/cameras", headers=headers, timeout=5)
         if resp.status_code == 200:
             cameras = resp.json()
@@ -90,19 +115,19 @@ def setup_camera(token, scenario):
                     break
         
         # 2. Create camera config in Core
-        # This will internally call Auth to create a key with 'create:ingest' permission
         payload = {
             "name": camera_name,
             "description": scenario.get("description", ""),
             "format": scenario["format"],
-            "field_mapping": json.dumps(scenario.get("field_mapping", {}))
+            "field_mapping": json.dumps(scenario.get("field_mapping", {})),
+            "gate_id": gate_id
         }
         
         resp = requests.post(f"{CORE_API_URL}/configs/cameras", json=payload, headers=headers, timeout=5)
         if resp.status_code == 201:
             data = resp.json()
             api_key = data.get("api_key")
-            print(f"✅ Camera '{camera_name}' registered. Key obtained.")
+            print(f"✅ Camera '{camera_name}' registered at Gate {gate_id}. Key obtained.")
             return api_key
         else:
             print(f"❌ Failed to create camera: {resp.status_code} {resp.text}")
@@ -153,9 +178,12 @@ def main():
         print("Aborting: Could not obtain admin token.")
         return
 
+    # Setup Gate
+    gate_id = get_or_create_gate(token)
+
     # Setup all cameras
     for scenario in CAMERA_SCENARIOS:
-        api_key = setup_camera(token, scenario)
+        api_key = setup_camera(token, scenario, gate_id)
         if api_key:
             scenario["api_key"] = api_key
         else:

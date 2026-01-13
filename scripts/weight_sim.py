@@ -52,33 +52,60 @@ def get_admin_token():
         print(f"🚨 Connection error during login: {e}")
         return None
 
-def setup_scale(token, scenario):
+def get_or_create_gate(token, gate_name="Main Entrance"):
+    """Finds or creates a Gate in the Core API."""
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        resp = requests.get(f"{CORE_API_URL}/configs/gates", headers=headers, timeout=5)
+        if resp.status_code == 200:
+            gates = resp.json()
+            for gate in gates:
+                if gate.get("name") == gate_name:
+                    print(f"📍 Found existing Gate: {gate_name} (ID: {gate['ID']})")
+                    return gate["ID"]
+        
+        # Create if not found
+        payload = {"name": gate_name, "description": "Auto-created by simulator"}
+        resp = requests.post(f"{CORE_API_URL}/configs/gates", json=payload, headers=headers, timeout=5)
+        if resp.status_code == 201:
+            gate = resp.json()
+            print(f"🆕 Created new Gate: {gate_name} (ID: {gate['ID']})")
+            return gate["ID"]
+        else:
+            print(f"❌ Failed to create Gate: {resp.status_code} {resp.text}")
+            return None
+    except Exception as e:
+        print(f"🚨 Error during gate setup: {e}")
+        return None
+
+def setup_scale(token, scenario, gate_id=None):
     headers = {"Authorization": f"Bearer {token}"}
     scale_name = scenario["name"]
     
     try:
         # Check if exists
         resp = requests.get(f"{CORE_API_URL}/configs/scales", headers=headers, timeout=5)
-        
-        cameras = resp.json().get("data", [])
-        for cam in cameras:
-            if cam.get("name") == scale_name:
-                cam_id = cam.get("ID") or cam.get("id")
-                requests.delete(f"{CORE_API_URL}/configs/scales/{cam_id}", headers=headers, timeout=5)
-                print(f"🗑️  Cleaned up existing scale: {scale_name}")
+        if resp.status_code == 200:
+            scales = resp.json().get("data", [])
+            for scale in scales:
+                if scale.get("name") == scale_name:
+                    scale_id = scale.get("ID") or scale.get("id")
+                    requests.delete(f"{CORE_API_URL}/configs/scales/{scale_id}", headers=headers, timeout=5)
+                    print(f"🗑️  Cleaned up existing scale: {scale_name}")
 
         payload = {
             "name": scale_name,
             "description": scenario.get("description", ""),
             "format": "json",
-            "field_mapping": "{\"weight\": \"weight\"}"
+            "field_mapping": json.dumps({"weight": "weight"}),
+            "gate_id": gate_id
         }
         
         resp = requests.post(f"{CORE_API_URL}/configs/scales", json=payload, headers=headers, timeout=5)
         if resp.status_code == 201:
             data = resp.json()
             api_key = data.get("api_key")
-            print(f"✅ Scale '{scale_name}' registered. Key obtained.")
+            print(f"✅ Scale '{scale_name}' registered at Gate {gate_id}. Key obtained.")
             return api_key
         else:
             print(f"❌ Failed to create scale: {resp.status_code} {resp.text}")
@@ -116,8 +143,11 @@ def main():
     if not token:
         return
 
+    # Setup Gate
+    gate_id = get_or_create_gate(token)
+
     for scenario in WEIGHT_SCENARIOS:
-        api_key = setup_scale(token, scenario)
+        api_key = setup_scale(token, scenario, gate_id)
         if api_key:
             scenario["api_key"] = api_key
 

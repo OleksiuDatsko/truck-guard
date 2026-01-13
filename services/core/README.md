@@ -8,8 +8,9 @@ The **Core Service** is the central management unit of the TruckGuard system. It
 
 It manages the persistence layer for the entire system's configuration and historical data:
 
-- **Configuration Manager:** Stores and serves camera and weight scale configurations, presets, and system-wide settings.
-- **Event Orchestrator:** Receives processed data from cameras and scales (via Adapters/Ingestor) and saves it as formal `PlateEvents` or `WeightEvents`.
+- **Configuration Manager:** Stores and serves camera, weight scale, and gate configurations, presets, and system-wide settings.
+- **Event Orchestrator & Correlation:** Receives processed data from cameras and scales (via Adapters/Ingestor), correlates them into unified **Permits** (passes), and handles multi-plate vehicle detection.
+- **Ignore List Management:** Maintains a list of excluded license plates.
 - **Integration:** Communicates with the **Auth Service** to automatically provision API keys for new cameras and scales.
 
 The project follows a modular Go structure:

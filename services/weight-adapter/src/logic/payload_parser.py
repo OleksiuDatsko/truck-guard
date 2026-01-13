@@ -16,7 +16,9 @@ class PayloadParser:
                 if isinstance(data, dict):
                     data = data.get(k)
             
-            return str(data) if data is not None else None
+            if data is not None:
+                return float(data)
+            return None
         except Exception as e:
             logger.warning(f"Failed to parse payload: {e}")
             return None

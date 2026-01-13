@@ -42,7 +42,11 @@ class EventProcessor:
                 "timestamp": data.get("at"),
                 "raw_payload": data.get("payload"),
             }
-            self.core.send_weight_event(final_event)
-            logger.info(f"Processed weight for {source_id}: {weight} kg")
+            try:
+                self.core.send_weight_event(final_event)
+                logger.info(f"Processed weight for {source_id}: {weight} kg")
+            except Exception as e:
+                logger.error(f"Failed to send weight event to Core: {e}")
+                raise e
         else:
             logger.warning(f"Could not extract weight for {source_id}")

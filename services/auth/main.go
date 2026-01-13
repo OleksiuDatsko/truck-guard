@@ -94,6 +94,16 @@ func seedData() {
 		{ID: "create:scales", Name: "Create Scales", Module: "core"},
 		{ID: "update:scales", Name: "Update Scales", Module: "core"},
 		{ID: "delete:scales", Name: "Delete Scales", Module: "core"},
+		{ID: "read:gates", Name: "Read Gates", Module: "core"},
+		{ID: "create:gates", Name: "Create Gates", Module: "core"},
+		{ID: "update:gates", Name: "Update Gates", Module: "core"},
+		{ID: "delete:gates", Name: "Delete Gates", Module: "core"},
+		{ID: "read:settings", Name: "Read Settings", Module: "core"},
+		{ID: "update:settings", Name: "Update Settings", Module: "core"},
+		{ID: "read:excluded_plates", Name: "Read Excluded Plates", Module: "core"},
+		{ID: "create:excluded_plates", Name: "Create Excluded Plates", Module: "core"},
+		{ID: "delete:excluded_plates", Name: "Delete Excluded Plates", Module: "core"},
+		{ID: "read:permits", Name: "Read Permits", Module: "core"},
 	}
 
 	for _, p := range perms {

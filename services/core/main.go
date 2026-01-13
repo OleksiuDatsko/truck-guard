@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/truckguard/core/src/api/handlers"
 	"github.com/truckguard/core/src/api/middleware"
+	"github.com/truckguard/core/src/models"
 	"github.com/truckguard/core/src/repository"
 )
 
@@ -29,11 +30,11 @@ func main() {
 			configs.POST("/presets", middleware.RequireCorePermission("create:presets"), handlers.HandleCreatePreset)
 			configs.PUT("/presets/:id", middleware.RequireCorePermission("update:presets"), handlers.HandleUpdatePreset)
 			configs.DELETE("/presets/:id", middleware.RequireCorePermission("delete:presets"), handlers.HandleDeletePreset)
-			
+
 			configs.GET("/cameras", middleware.RequireCorePermission("read:cameras"), handlers.HandleGetCameras)
 			configs.GET("/cameras/:id", middleware.RequireCorePermission("read:cameras"), handlers.HandleGetConfigByID)
 			configs.POST("/cameras",
-			middleware.RequireCorePermission("create:cameras"),
+				middleware.RequireCorePermission("create:cameras"),
 				middleware.RequireCorePermission("create:keys"),
 				handlers.HandleCreateCamera,
 			)
@@ -48,6 +49,19 @@ func main() {
 			)
 			configs.PUT("/scales/:id", middleware.RequireCorePermission("update:scales"), handlers.HandleUpdateScale)
 			configs.DELETE("/scales/:id", middleware.RequireCorePermission("delete:scales"), handlers.HandleDeleteScale)
+
+			configs.GET("/gates", middleware.RequireCorePermission("read:gates"), handlers.HandleGetGates)
+			configs.GET("/gates/:id", middleware.RequireCorePermission("read:gates"), handlers.HandleGetGateByID)
+			configs.POST("/gates", middleware.RequireCorePermission("create:gates"), handlers.HandleCreateGate)
+			configs.PUT("/gates/:id", middleware.RequireCorePermission("update:gates"), handlers.HandleUpdateGate)
+			configs.DELETE("/gates/:id", middleware.RequireCorePermission("delete:gates"), handlers.HandleDeleteGate)
+
+			configs.GET("/settings", middleware.RequireCorePermission("read:settings"), handlers.HandleListSettings)
+			configs.POST("/settings", middleware.RequireCorePermission("update:settings"), handlers.HandleUpdateSetting)
+
+			configs.GET("/excluded-plates", middleware.RequireCorePermission("read:excluded_plates"), handlers.HandleListExcludedPlates)
+			configs.POST("/excluded-plates", middleware.RequireCorePermission("create:excluded_plates"), handlers.HandleCreateExcludedPlate)
+			configs.DELETE("/excluded-plates/:id", middleware.RequireCorePermission("delete:excluded_plates"), handlers.HandleDeleteExcludedPlate)
 
 		}
 
@@ -77,7 +91,15 @@ func main() {
 			events.GET("/system", middleware.RequireCorePermission("read:events"), handlers.HandleGetSystemEvents)
 			events.GET("/system/:id", middleware.RequireCorePermission("read:events"), handlers.HandleGetSystemEventByID)
 		}
+
+		permits := api.Group("/permits")
+		{
+			permits.GET("/", middleware.RequireCorePermission("read:permits"), handlers.HandleGetPermits)
+			permits.GET("/:id", middleware.RequireCorePermission("read:permits"), handlers.HandleGetPermitByID)
+		}
 	}
+
+	repository.DB.FirstOrCreate(&models.SystemSetting{Key: "match_window_seconds", Value: "120"})
 
 	port := os.Getenv("PORT")
 	if port == "" {

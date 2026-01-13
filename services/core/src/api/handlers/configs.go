@@ -99,9 +99,28 @@ func HandleUpdateCamera(c *gin.Context) {
 }
 
 func HandleDeleteCamera(c *gin.Context) {
-	// TODO: also delete api key from auth service
 	id := c.Param("id")
-	repository.DB.Delete(&models.CameraConfig{}, id)
+	var config models.CameraConfig
+	if err := repository.DB.First(&config, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Camera config not found"})
+		return
+	}
+
+	if config.SourceID != "" {
+		authClient := clients.NewAuthClient()
+		err := authClient.DeleteApiKey(
+			c.Request.Context(),
+			config.SourceID,
+			c.GetHeader("Authorization"),
+			c.GetHeader("X-Api-Key"),
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete associated API key: " + err.Error()})
+			return
+		}
+	}
+
+	repository.DB.Delete(&config)
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }
 
@@ -159,7 +178,6 @@ func HandleGetConfigByScaleID(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, config)
 }
-
 
 func HandleUpdateScale(c *gin.Context) {
 	id := c.Param("id")

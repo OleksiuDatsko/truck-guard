@@ -26,6 +26,10 @@ tags:
     description: Processing vehicle events (plates, weights)
   - name: Ingestor
     description: Raw data ingestion from devices
+  - name: Gates
+    description: Physical entry/exit management
+  - name: Permits
+    description: Vehicle passes and event correlation
 
 security:
   - bearerAuth: []
@@ -55,7 +59,7 @@ paths:
             application/json:
               example: { token: "eyJhbG..." }
         401:
-          $ref: '#/components/responses/Unauthorized'
+          $ref: "#/components/responses/Unauthorized"
 
   /auth/register:
     post:
@@ -81,7 +85,7 @@ paths:
         201:
           description: User created
         403:
-          $ref: '#/components/responses/Forbidden'
+          $ref: "#/components/responses/Forbidden"
 
   /auth/validate:
     get:
@@ -92,7 +96,7 @@ paths:
         200:
           description: Token is valid
         401:
-          $ref: '#/components/responses/Unauthorized'
+          $ref: "#/components/responses/Unauthorized"
 
   /auth/health:
     get:
@@ -117,7 +121,7 @@ paths:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/User' }
+                items: { $ref: "#/components/schemas/User" }
 
   /auth/admin/users/{id}/role:
     put:
@@ -174,7 +178,7 @@ paths:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/Role' }
+                items: { $ref: "#/components/schemas/Role" }
     post:
       tags: [Admin]
       summary: Create a new role
@@ -185,7 +189,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/Role' }
+            schema: { $ref: "#/components/schemas/Role" }
       responses:
         201:
           description: Role created
@@ -205,7 +209,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/Role' }
+            schema: { $ref: "#/components/schemas/Role" }
       responses:
         200:
           description: Role updated
@@ -261,7 +265,7 @@ paths:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/APIKey' }
+                items: { $ref: "#/components/schemas/APIKey" }
     post:
       tags: [Admin]
       summary: Create a new API Key
@@ -355,7 +359,7 @@ paths:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/Permission' }
+                items: { $ref: "#/components/schemas/Permission" }
 
   # --- Core Service ---
   /api/health:
@@ -365,7 +369,7 @@ paths:
       responses:
         200:
           description: Service is healthy
-    
+
   /api/cameras/by-id/{camera_id}:
     get:
       tags: [Cameras]
@@ -381,8 +385,8 @@ paths:
           description: Camera config
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/CameraConfig' }
-  
+              schema: { $ref: "#/components/schemas/CameraConfig" }
+
   /api/scales/by-id/{scale_id}:
     get:
       tags: [Scales]
@@ -398,7 +402,7 @@ paths:
           description: Scale config
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ScaleConfig' }
+              schema: { $ref: "#/components/schemas/ScaleConfig" }
 
   /api/configs/presets:
     get:
@@ -414,14 +418,14 @@ paths:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/CameraPreset' }
+                items: { $ref: "#/components/schemas/CameraPreset" }
     post:
       tags: [Configs]
       summary: Create camera preset
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CameraPreset' }
+            schema: { $ref: "#/components/schemas/CameraPreset" }
       responses:
         201:
           description: Preset created
@@ -449,7 +453,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CameraPreset' }
+            schema: { $ref: "#/components/schemas/CameraPreset" }
       responses:
         200:
           description: Preset updated
@@ -489,8 +493,8 @@ paths:
                 properties:
                   data:
                     type: array
-                    items: { $ref: '#/components/schemas/CameraConfig' }
-                  metadata: { $ref: '#/components/schemas/PaginationMetadata' }
+                    items: { $ref: "#/components/schemas/CameraConfig" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
     post:
       tags: [Configs]
       summary: Register a new camera
@@ -500,7 +504,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CameraConfig' }
+            schema: { $ref: "#/components/schemas/CameraConfig" }
       responses:
         201:
           description: Camera registered
@@ -522,9 +526,9 @@ paths:
           description: Camera config
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/CameraConfig' }
+              schema: { $ref: "#/components/schemas/CameraConfig" }
         404:
-          $ref: '#/components/responses/NotFound'
+          $ref: "#/components/responses/NotFound"
     put:
       tags: [Configs]
       summary: Update camera config
@@ -539,7 +543,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CameraConfig' }
+            schema: { $ref: "#/components/schemas/CameraConfig" }
       responses:
         200:
           description: Camera updated
@@ -582,8 +586,8 @@ paths:
                 properties:
                   data:
                     type: array
-                    items: { $ref: '#/components/schemas/ScaleConfig' }
-                  metadata: { $ref: '#/components/schemas/PaginationMetadata' }
+                    items: { $ref: "#/components/schemas/ScaleConfig" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
     post:
       tags: [Configs]
       summary: Register a new scale
@@ -593,7 +597,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/ScaleConfig' }
+            schema: { $ref: "#/components/schemas/ScaleConfig" }
       responses:
         201:
           description: Scale registered
@@ -612,9 +616,9 @@ paths:
           description: Scale config
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ScaleConfig' }
+              schema: { $ref: "#/components/schemas/ScaleConfig" }
         404:
-          $ref: '#/components/responses/NotFound'
+          $ref: "#/components/responses/NotFound"
 
   /api/configs/scales/{id}:
     put:
@@ -631,7 +635,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/ScaleConfig' }
+            schema: { $ref: "#/components/schemas/ScaleConfig" }
       responses:
         200:
           description: Scale updated
@@ -649,6 +653,148 @@ paths:
       responses:
         204:
           description: Scale deleted
+
+  /api/configs/gates:
+    get:
+      tags: [Gates]
+      summary: List all gates
+      description: |
+        List all physical gates.
+        Permissions: `read:gates`
+      responses:
+        200:
+          description: List of gates
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Gate" }
+    post:
+      tags: [Gates]
+      summary: Create a new gate
+      description: |
+        Create a new physical gate grouping.
+        Permissions: `create:gates`
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Gate" }
+      responses:
+        201:
+          description: Gate created
+
+  /api/configs/gates/{id}:
+    get:
+      tags: [Gates]
+      summary: Get gate by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Gate details
+    put:
+      tags: [Gates]
+      summary: Update gate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Gate" }
+      responses:
+        200:
+          description: Gate updated
+    delete:
+      tags: [Gates]
+      summary: Delete gate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Gate deleted
+
+  /api/configs/settings:
+    get:
+      tags: [Configs]
+      summary: List system settings
+      description: |
+        List all global system settings.
+        Permissions: `read:settings`
+      responses:
+        200:
+          description: List of settings
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SystemSetting" }
+    post:
+      tags: [Configs]
+      summary: Update system setting
+      description: |
+        Update or create a system setting (e.g., match_window_seconds).
+        Permissions: `update:settings`
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SystemSetting" }
+      responses:
+        200:
+          description: Setting updated
+
+  /api/configs/excluded-plates:
+    get:
+      tags: [Configs]
+      summary: List excluded plates
+      description: |
+        List all license plates in the ignore list.
+        Permissions: `read:excluded_plates`
+      responses:
+        200:
+          description: List of plates
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExcludedPlate" }
+    post:
+      tags: [Configs]
+      summary: Add plate to ignore list
+      description: |
+        Add a plate to the exclusion list.
+        Permissions: `create:excluded_plates`
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExcludedPlate" }
+      responses:
+        201:
+          description: Plate added
+
+  /api/configs/excluded-plates/{id}:
+    delete:
+      tags: [Configs]
+      summary: Remove plate from ignore list
+      description: |
+        Remove a plate from the exclusion list by ID.
+        Permissions: `delete:excluded_plates`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Plate removed
 
   /api/events/plate:
     get:
@@ -674,8 +820,8 @@ paths:
                 properties:
                   data:
                     type: array
-                    items: { $ref: '#/components/schemas/RawPlateEvent' }
-                  metadata: { $ref: '#/components/schemas/PaginationMetadata' }
+                    items: { $ref: "#/components/schemas/RawPlateEvent" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
     post:
       tags: [Events]
       summary: Submit a plate recognition event
@@ -685,7 +831,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/RawPlateEvent' }
+            schema: { $ref: "#/components/schemas/RawPlateEvent" }
       responses:
         202:
           description: Event accepted for processing
@@ -707,9 +853,9 @@ paths:
           description: Event details
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/RawPlateEvent' }
+              schema: { $ref: "#/components/schemas/RawPlateEvent" }
         404:
-          $ref: '#/components/responses/NotFound'
+          $ref: "#/components/responses/NotFound"
     patch:
       tags: [Events]
       summary: Update plate event (manual correction)
@@ -756,8 +902,8 @@ paths:
                 properties:
                   data:
                     type: array
-                    items: { $ref: '#/components/schemas/RawWeightEvent' }
-                  metadata: { $ref: '#/components/schemas/PaginationMetadata' }
+                    items: { $ref: "#/components/schemas/RawWeightEvent" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
     post:
       tags: [Events]
       summary: Submit a weight scale event
@@ -767,7 +913,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/RawWeightEvent' }
+            schema: { $ref: "#/components/schemas/RawWeightEvent" }
       responses:
         202:
           description: Event accepted
@@ -786,9 +932,9 @@ paths:
           description: Weight event details
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/RawWeightEvent' }
+              schema: { $ref: "#/components/schemas/RawWeightEvent" }
         404:
-          $ref: '#/components/responses/NotFound'
+          $ref: "#/components/responses/NotFound"
 
   /api/events/system:
     get:
@@ -814,8 +960,8 @@ paths:
                 properties:
                   data:
                     type: array
-                    items: { $ref: '#/components/schemas/SystemEvent' }
-                  metadata: { $ref: '#/components/schemas/PaginationMetadata' }
+                    items: { $ref: "#/components/schemas/SystemEvent" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
 
   /api/events/system/{id}:
     get:
@@ -834,9 +980,57 @@ paths:
           description: System event details
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SystemEvent' }
+              schema: { $ref: "#/components/schemas/SystemEvent" }
         404:
-          $ref: '#/components/responses/NotFound'
+          $ref: "#/components/responses/NotFound"
+
+  /api/permits/:
+    get:
+      tags: [Permits]
+      summary: List all permits
+      description: |
+        List all vehicle permits (correlated passes).
+        Permissions: `read:events`
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        200:
+          description: List of permits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Permit" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
+
+  /api/permits/{id}:
+    get:
+      tags: [Permits]
+      summary: Get permit by ID
+      description: |
+        Retrieve detailed vehicle permit with image links.
+        Permissions: `read:events`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Permit details
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Permit" }
+        404:
+          $ref: "#/components/responses/NotFound"
 
   # --- Ingestor Service ---
   /ingest/camera:
@@ -865,7 +1059,7 @@ paths:
           description: Data ingested successfully
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/IngestEvent' }
+              schema: { $ref: "#/components/schemas/IngestEvent" }
 
   /ingest/weight:
     post:
@@ -890,7 +1084,7 @@ paths:
           description: Data ingested successfully
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/IngestEvent' }
+              schema: { $ref: "#/components/schemas/IngestEvent" }
 
   # --- ANPR Service ---
   /anpr/recognize:
@@ -946,7 +1140,7 @@ components:
         id: { type: integer }
         username: { type: string }
         role_id: { type: integer }
-        role: { $ref: '#/components/schemas/Role' }
+        role: { $ref: "#/components/schemas/Role" }
         created_at: { type: string, format: date-time }
 
     Role:
@@ -958,7 +1152,7 @@ components:
         description: { type: string }
         permissions:
           type: array
-          items: { $ref: '#/components/schemas/Permission' }
+          items: { $ref: "#/components/schemas/Permission" }
 
     Permission:
       type: object
@@ -976,7 +1170,7 @@ components:
         is_active: { type: boolean }
         permissions:
           type: array
-          items: { $ref: '#/components/schemas/Permission' }
+          items: { $ref: "#/components/schemas/Permission" }
         created_at: { type: string, format: date-time }
 
     CameraConfig:
@@ -992,7 +1186,9 @@ components:
           type: string
           enum: [xml, json]
         run_anpr: { type: boolean }
-        field_mapping: { type: string, description: "JSON mapping for payload fields" }
+        field_mapping:
+          { type: string, description: "JSON mapping for payload fields" }
+        gate_id: { type: integer, description: "Physical gate association" }
 
     CameraPreset:
       type: object
@@ -1002,6 +1198,49 @@ components:
         format: { type: string, enum: [xml, json] }
         run_anpr: { type: boolean }
         field_mapping: { type: string }
+
+    SystemSetting:
+      type: object
+      required: [key, value]
+      properties:
+        id: { type: integer }
+        key: { type: string }
+        value: { type: string }
+
+    Gate:
+      type: object
+      required: [name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+
+    ExcludedPlate:
+      type: object
+      required: [plate]
+      properties:
+        id: { type: integer }
+        plate: { type: string }
+        comment: { type: string }
+
+    Permit:
+      type: object
+      properties:
+        id: { type: integer }
+        gate_id: { type: integer }
+        gate: { $ref: "#/components/schemas/Gate" }
+        plate_front: { type: string }
+        plate_back: { type: string }
+        total_weight: { type: number }
+        entry_time: { type: string, format: date-time }
+        is_closed: { type: boolean }
+        created_at: { type: string, format: date-time }
+        plate_events:
+          type: array
+          items: { $ref: "#/components/schemas/RawPlateEvent" }
+        weight_events:
+          type: array
+          items: { $ref: "#/components/schemas/RawWeightEvent" }
 
     ScaleConfig:
       type: object
@@ -1014,7 +1253,8 @@ components:
         format:
           type: string
           enum: [xml, json]
-        field_mapping: { type: string, description: "JSON mapping for payload fields" }
+        field_mapping:
+          { type: string, description: "JSON mapping for payload fields" }
 
     RawPlateEvent:
       type: object
@@ -1025,12 +1265,14 @@ components:
         camera_name: { type: string }
         plate: { type: string }
         plate_corrected: { type: string }
+        corrected_by: { type: string }
         is_manual: { type: boolean }
         image_key: { type: string }
         timestamp: { type: string, format: date-time }
-        suggestions: { type: string, description: "JSONB suggestions from ANPR" }
+        suggestions:
+          { type: string, description: "JSONB suggestions from ANPR" }
         system_event_id: { type: integer }
-        system_event: { $ref: '#/components/schemas/SystemEvent' }
+        system_event: { $ref: "#/components/schemas/SystemEvent" }
 
     RawWeightEvent:
       type: object
@@ -1042,7 +1284,7 @@ components:
         raw_payload: { type: string, description: "Unparsed raw weight data" }
         timestamp: { type: string, format: date-time }
         system_event_id: { type: integer }
-        system_event: { $ref: '#/components/schemas/SystemEvent' }
+        system_event: { $ref: "#/components/schemas/SystemEvent" }
 
     SystemEvent:
       type: object

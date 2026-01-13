@@ -81,3 +81,31 @@ func (c *AuthClient) CreateApiKey(ctx context.Context, name string, permissions 
 
 	return &result, nil
 }
+
+func (c *AuthClient) DeleteApiKey(ctx context.Context, keyID string, authHeader, apiKeyHeader string) error {
+	url := fmt.Sprintf("%s/admin/keys/%s", c.BaseURL, keyID)
+
+	req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	if authHeader != "" {
+		req.Header.Set("Authorization", authHeader)
+	}
+	if apiKeyHeader != "" {
+		req.Header.Set("X-Api-Key", apiKeyHeader)
+	}
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("auth service request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("auth service returned status: %d", resp.StatusCode)
+	}
+
+	return nil
+}

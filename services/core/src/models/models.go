@@ -23,6 +23,9 @@ type CameraConfig struct {
 	PresetID *uint         `json:"preset_id"`
 	Preset   *CameraPreset `json:"preset,omitempty"`
 
+	GateID *uint `json:"gate_id"`
+	Gate   *Gate `json:"gate,omitempty"`
+
 	Format       string `json:"format"`
 	RunANPR      *bool  `json:"run_anpr"`
 	FieldMapping string `json:"field_mapping"`
@@ -36,6 +39,40 @@ type ScaleConfig struct {
 
 	Format       string `json:"format"`
 	FieldMapping string `json:"field_mapping"`
+
+	GateID *uint `json:"gate_id"`
+	Gate   *Gate `json:"gate,omitempty"`
+}
+
+type SystemSetting struct {
+	gorm.Model
+	Key   string `gorm:"uniqueIndex;not null" json:"key"`
+	Value string `json:"value"`
+}
+
+type Gate struct {
+	gorm.Model
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type ExcludedPlate struct {
+	gorm.Model
+	Plate   string `gorm:"uniqueIndex;not null" json:"plate"`
+	Comment string `json:"comment"`
+}
+
+type Permit struct {
+	gorm.Model
+	GateID       uint             `json:"gate_id"`
+	Gate         Gate             `gorm:"foreignKey:GateID" json:"gate"`
+	PlateFront   string           `json:"plate_front"`
+	PlateBack    string           `json:"plate_back"`
+	TotalWeight  float64          `json:"total_weight"`
+	EntryTime    time.Time        `json:"entry_time"`
+	IsClosed     bool             `gorm:"default:false" json:"is_closed"`
+	PlateEvents  []RawPlateEvent  `gorm:"many2many:permit_plate_events;" json:"plate_events,omitempty"`
+	WeightEvents []RawWeightEvent `gorm:"many2many:permit_weight_events;" json:"weight_events,omitempty"`
 }
 
 type SystemEvent struct {
@@ -52,6 +89,7 @@ type RawPlateEvent struct {
 	SourceName     string      `gorm:"column:camera_name" json:"camera_name"`
 	Plate          string      `json:"plate"`
 	PlateCorrected string      `json:"plate_corrected"`
+	CorrectedBy    string      `json:"corrected_by"`
 	IsManual       bool        `gorm:"default:false" json:"is_manual"`
 	ImageKey       string      `json:"image_key"`
 	Timestamp      time.Time   `json:"timestamp"`

@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/truckguard/core/src/logic"
 	"github.com/truckguard/core/src/models"
 	"github.com/truckguard/core/src/repository"
 	"github.com/truckguard/core/src/utils"
@@ -27,6 +28,8 @@ func HandlePlateEvent(c *gin.Context) {
 		return
 	}
 
+	go logic.MatchPlateEvent(&event)
+
 	c.JSON(http.StatusAccepted, gin.H{"status": "processing", "id": event.ID})
 }
 
@@ -36,13 +39,51 @@ func HandlePatchPlateEvent(c *gin.Context) {
 		PlateCorrected string `json:"plate_corrected"`
 	}
 	if err := c.BindJSON(&input); err != nil {
+		c.Status(400)
+		return
+	}
+	var event models.RawPlateEvent
+	if err := repository.DB.First(&event, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
 		return
 	}
 
-	repository.DB.Model(&models.RawPlateEvent{}).Where("id = ?", id).Updates(map[string]interface{}{
+	oldEffectivePlate := event.Plate
+	if event.PlateCorrected != "" {
+		oldEffectivePlate = event.PlateCorrected
+	}
+
+	userID := c.GetHeader("X-User-ID")
+	if err := repository.DB.Model(&models.RawPlateEvent{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"plate_corrected": input.PlateCorrected,
+		"corrected_by":    userID,
 		"is_manual":       true,
-	})
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update event"})
+		return
+	}
+
+	var permits []models.Permit
+	err := repository.DB.Joins("JOIN permit_plate_events ON permit_plate_events.permit_id = permits.id").
+		Where("permit_plate_events.raw_plate_event_id = ?", id).
+		Find(&permits).Error
+
+	if err == nil {
+		for _, permit := range permits {
+			updated := false
+			if permit.PlateFront == oldEffectivePlate {
+				permit.PlateFront = input.PlateCorrected
+				updated = true
+			}
+			if permit.PlateBack == oldEffectivePlate {
+				permit.PlateBack = input.PlateCorrected
+				updated = true
+			}
+			if updated {
+				repository.DB.Save(&permit)
+			}
+		}
+	}
 	c.Status(200)
 }
 
@@ -86,6 +127,8 @@ func HandleWeightEvent(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record weight"})
 		return
 	}
+
+	go logic.MatchWeightEvent(&event)
 
 	c.JSON(http.StatusAccepted, gin.H{"status": "weight_recorded", "id": event.ID})
 }
