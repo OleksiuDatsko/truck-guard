@@ -18,6 +18,8 @@ tags:
     description: Administrative operations for users, roles, and API keys
   - name: Cameras
     description: Camera configuration and discovery
+  - name: Scales
+    description: Scale configuration and discovery
   - name: Configs
     description: System configurations and presets
   - name: Events
@@ -59,7 +61,9 @@ paths:
     post:
       tags: [Auth]
       summary: Register a new user
-      description: Create a new user account. Requires 'create:users' permission.
+      description: |
+        Create a new user account.
+        Permissions: `create:users`
       security:
         - bearerAuth: []
       requestBody:
@@ -103,7 +107,9 @@ paths:
     get:
       tags: [Admin]
       summary: List all users
-      security: [{ bearerAuth: [] }]
+      description: |
+        List all users in the system.
+        Permissions: `manage:settings`, `read:users`
       responses:
         200:
           description: List of users
@@ -117,6 +123,9 @@ paths:
     put:
       tags: [Admin]
       summary: Update user role
+      description: |
+        Update the role of a user.
+        Permissions: `manage:settings`, `update:users`
       parameters:
         - name: id
           in: path
@@ -138,6 +147,9 @@ paths:
     delete:
       tags: [Admin]
       summary: Delete user
+      description: |
+        Permanently delete a user.
+        Permissions: `manage:settings`, `delete:users`
       parameters:
         - name: id
           in: path
@@ -151,6 +163,9 @@ paths:
     get:
       tags: [Admin]
       summary: List all roles
+      description: |
+        List all user roles.
+        Permissions: `manage:settings`, `read:roles`
       security: [{ bearerAuth: [] }]
       responses:
         200:
@@ -163,6 +178,9 @@ paths:
     post:
       tags: [Admin]
       summary: Create a new role
+      description: |
+        Create a new role with specific permissions.
+        Permissions: `manage:settings`, `create:roles`
       security: [{ bearerAuth: [] }]
       requestBody:
         content:
@@ -176,6 +194,9 @@ paths:
     put:
       tags: [Admin]
       summary: Update role
+      description: |
+        Update role name or description.
+        Permissions: `manage:settings`, `update:roles`
       parameters:
         - name: id
           in: path
@@ -191,6 +212,9 @@ paths:
     delete:
       tags: [Admin]
       summary: Delete role
+      description: |
+        Permanently delete a role.
+        Permissions: `manage:settings`, `delete:roles`
       parameters:
         - name: id
           in: path
@@ -204,6 +228,9 @@ paths:
     post:
       tags: [Admin]
       summary: Assign permissions to role
+      description: |
+        Replace permissions assigned to a role.
+        Permissions: `manage:settings`, `update:roles`
       parameters:
         - name: id
           in: path
@@ -223,6 +250,9 @@ paths:
     get:
       tags: [Admin]
       summary: List API Keys
+      description: |
+        List all IoT API Keys.
+        Permissions: `manage:settings`, `read:keys`
       security: [{ bearerAuth: [] }]
       responses:
         200:
@@ -235,6 +265,9 @@ paths:
     post:
       tags: [Admin]
       summary: Create a new API Key
+      description: |
+        Create a new IoT API Key with permissions.
+        Permissions: `manage:settings`, `create:keys`
       security: [{ bearerAuth: [] }]
       requestBody:
         content:
@@ -290,6 +323,9 @@ paths:
     put:
       tags: [Admin]
       summary: Assign permissions to key
+      description: |
+        Replace permissions assigned to an API Key.
+        Permissions: `manage:settings`, `update:keys`
       parameters:
         - name: id
           in: path
@@ -309,6 +345,9 @@ paths:
     get:
       tags: [Admin]
       summary: List all permissions
+      description: |
+        List all available permissions in the system.
+        Permissions: `manage:settings`, `read:roles`
       responses:
         200:
           description: List of permissions
@@ -326,29 +365,12 @@ paths:
       responses:
         200:
           description: Service is healthy
-
-  /api/cameras/{id}:
-    get:
-      tags: [Cameras]
-      summary: Get camera config by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-      responses:
-        200:
-          description: Camera config
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/CameraConfig' }
-        404:
-          $ref: '#/components/responses/NotFound'
-
+    
   /api/cameras/by-id/{camera_id}:
     get:
       tags: [Cameras]
       summary: Get camera config by Source ID
+      description: Retrieve camera configuration by external Source ID.
       parameters:
         - name: camera_id
           in: path
@@ -360,11 +382,31 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CameraConfig' }
+  
+  /api/scales/by-id/{scale_id}:
+    get:
+      tags: [Scales]
+      summary: Get scale config by Source ID
+      description: Retrieve scale configuration by external Source ID.
+      parameters:
+        - name: scale_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Scale config
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ScaleConfig' }
 
   /api/configs/presets:
     get:
       tags: [Configs]
       summary: List camera presets
+      description: |
+        List all available camera configuration presets.
+        Permissions: `manage:configs`, `read:presets`
       responses:
         200:
           description: List of presets
@@ -427,6 +469,9 @@ paths:
     get:
       tags: [Configs]
       summary: List all cameras
+      description: |
+        List all registered cameras with pagination.
+        Permissions: `manage:configs`, `read:cameras`
       parameters:
         - name: page
           in: query
@@ -449,7 +494,9 @@ paths:
     post:
       tags: [Configs]
       summary: Register a new camera
-      description: Create a camera and automatically provision an API Key.
+      description: |
+        Create a camera and automatically provision an API Key.
+        Permissions: `manage:configs`, `create:cameras`, `create:keys`
       requestBody:
         content:
           application/json:
@@ -459,9 +506,31 @@ paths:
           description: Camera registered
 
   /api/configs/cameras/{id}:
+    get:
+      tags: [Configs]
+      summary: Get camera config by ID
+      description: |
+        Retrieve camera configuration by internal database ID.
+        Permissions: `manage:configs`, `read:cameras`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Camera config
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CameraConfig' }
+        404:
+          $ref: '#/components/responses/NotFound'
     put:
       tags: [Configs]
       summary: Update camera config
+      description: |
+        Update existing camera configuration.
+        Permissions: `manage:configs`, `update:cameras`
       parameters:
         - name: id
           in: path
@@ -477,6 +546,9 @@ paths:
     delete:
       tags: [Configs]
       summary: Delete camera config
+      description: |
+        Permanently delete camera configuration.
+        Permissions: `manage:configs`, `delete:cameras`
       parameters:
         - name: id
           in: path
@@ -486,10 +558,105 @@ paths:
         204:
           description: Camera deleted
 
+  /api/configs/scales:
+    get:
+      tags: [Configs]
+      summary: List all scales
+      description: |
+        List all registered weight scales with pagination.
+        Permissions: `manage:configs`, `read:scales`
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        200:
+          description: List of scales
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ScaleConfig' }
+                  metadata: { $ref: '#/components/schemas/PaginationMetadata' }
+    post:
+      tags: [Configs]
+      summary: Register a new scale
+      description: |
+        Create a scale configuration and automatically provision an API Key.
+        Permissions: `manage:configs`, `create:scales`, `create:keys`
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ScaleConfig' }
+      responses:
+        201:
+          description: Scale registered
+
+  /api/configs/scales/by-id/{scale_id}:
+    get:
+      tags: [Configs]
+      summary: Get scale config by Source ID
+      parameters:
+        - name: scale_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Scale config
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ScaleConfig' }
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /api/configs/scales/{id}:
+    put:
+      tags: [Configs]
+      summary: Update scale config
+      description: |
+        Update existing scale configuration.
+        Permissions: `manage:configs`, `update:scales`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ScaleConfig' }
+      responses:
+        200:
+          description: Scale updated
+    delete:
+      tags: [Configs]
+      summary: Delete scale config
+      description: |
+        Permanently delete scale configuration.
+        Permissions: `manage:configs`, `delete:scales`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Scale deleted
+
   /api/events/plate:
     get:
       tags: [Events]
       summary: List plate recognition events
+      description: |
+        List all plate events with pagination.
+        Permissions: `read:events`
       parameters:
         - name: page
           in: query
@@ -512,6 +679,9 @@ paths:
     post:
       tags: [Events]
       summary: Submit a plate recognition event
+      description: |
+        Submit a new plate recognition event.
+        Permissions: `create:events`
       requestBody:
         content:
           application/json:
@@ -543,6 +713,9 @@ paths:
     patch:
       tags: [Events]
       summary: Update plate event (manual correction)
+      description: |
+        Manually correct the recognized plate string.
+        Permissions: `update:events`
       parameters:
         - name: id
           in: path
@@ -563,6 +736,9 @@ paths:
     get:
       tags: [Events]
       summary: List weight events
+      description: |
+        List all weight events with pagination.
+        Permissions: `read:events`
       parameters:
         - name: page
           in: query
@@ -585,6 +761,9 @@ paths:
     post:
       tags: [Events]
       summary: Submit a weight scale event
+      description: |
+        Submit a new weight event from a scale.
+        Permissions: `create:events`
       requestBody:
         content:
           application/json:
@@ -615,6 +794,9 @@ paths:
     get:
       tags: [Events]
       summary: List system events
+      description: |
+        List all system events (audit log).
+        Permissions: `read:events`
       parameters:
         - name: page
           in: query
@@ -639,6 +821,9 @@ paths:
     get:
       tags: [Events]
       summary: Get system event by ID
+      description: |
+        Retrieve system event details.
+        Permissions: `read:events`
       parameters:
         - name: id
           in: path
@@ -654,19 +839,13 @@ paths:
           $ref: '#/components/responses/NotFound'
 
   # --- Ingestor Service ---
-  /ingest:
+  /ingest/camera:
     post:
       tags: [Ingestor]
-      summary: Ingest raw device data
-      description: Endpoint for cameras/devices to upload images and metadata.
-      parameters:
-        - name: X-Source-ID
-          in: header
-          required: true
-          schema: { type: string }
-        - name: X-Source-Name
-          in: header
-          schema: { type: string }
+      summary: Ingest raw camera data
+      description: |
+        Endpoint for cameras to upload images and metadata.
+        Permissions: `create:ingest`
       requestBody:
         content:
           multipart/form-data:
@@ -681,6 +860,31 @@ paths:
                 payload:
                   type: string
                   description: JSON or XML string depending on device
+      responses:
+        202:
+          description: Data ingested successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IngestEvent' }
+
+  /ingest/weight:
+    post:
+      tags: [Ingestor]
+      summary: Ingest raw weight data
+      description: |
+        Endpoint for scales to upload weight data.
+        Permissions: `create:ingest`
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [device_id]
+              properties:
+                device_id: { type: string }
+                payload:
+                  type: string
+                  description: JSON payload with weight data
       responses:
         202:
           description: Data ingested successfully
@@ -799,6 +1003,19 @@ components:
         run_anpr: { type: boolean }
         field_mapping: { type: string }
 
+    ScaleConfig:
+      type: object
+      required: [scale_id, name, format]
+      properties:
+        id: { type: integer }
+        scale_id: { type: string, description: "Source Identification String" }
+        name: { type: string }
+        description: { type: string }
+        format:
+          type: string
+          enum: [xml, json]
+        field_mapping: { type: string, description: "JSON mapping for payload fields" }
+
     RawPlateEvent:
       type: object
       required: [camera_id, plate, timestamp]
@@ -822,6 +1039,7 @@ components:
         id: { type: integer }
         scale_id: { type: string }
         weight: { type: number, format: float }
+        raw_payload: { type: string, description: "Unparsed raw weight data" }
         timestamp: { type: string, format: date-time }
         system_event_id: { type: integer }
         system_event: { $ref: '#/components/schemas/SystemEvent' }
@@ -838,6 +1056,7 @@ components:
     IngestEvent:
       type: object
       properties:
+        type: { type: string }
         source_id: { type: string }
         source_name: { type: string }
         device_id: { type: string }

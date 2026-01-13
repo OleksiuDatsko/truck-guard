@@ -8,10 +8,15 @@ The **Ingestor Service** is the high-performance entry point for IoT data in the
 
 The service is built for "fire-and-forget" high-speed ingestion:
 
-*   **Fast Response:** Immediately acknowledges incoming multipart data (Status 202) to free up camera resources.
-*   **Blob Storage:** Automatically uploads raw image frames (JPG) to **MinIO** (S3-compatible storage) for permanent archival.
-*   **Async Streamer:** Pushes a lightweight event descriptor into **Redis Streams** (`camera:raw`). This triggers downstream processing by AI models and normalization workers.
-*   **Authentication:** Requires a valid API Key (provided by the Auth service) for every ingestion request.
+*   **Fast Response:** Immediately acknowledges incoming data (Status 202) to free up device resources.
+*   **Split Ingestion:** 
+    *   `/ingest/camera`: Handles `multipart/form-data` with images and metadata. Uploads frames to **MinIO**.
+    *   `/ingest/weight`: Handles form data (non-image) for sensor payloads.
+*   **Blob Storage:** Camera frames (JPG) are automatically stored in **MinIO**.
+*   **Async Streamer:** Pushes event descriptors into specific **Redis Streams**:
+    *   `camera:raw` for camera events.
+    *   `weight:raw` for weight events.
+*   **Authentication:** Requires a valid API Key (provided by the Auth service) for every ingestion request via `X-API-Key` header.
 
 Modular structure under `src/`:
 - `src/api`: Data ingestion handlers and permission middleware.

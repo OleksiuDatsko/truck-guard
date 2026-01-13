@@ -28,6 +28,16 @@ type CameraConfig struct {
 	FieldMapping string `json:"field_mapping"`
 }
 
+type ScaleConfig struct {
+	gorm.Model
+	SourceID    string `gorm:"column:scale_id;uniqueIndex;not null" json:"scale_id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+
+	Format       string `json:"format"`
+	FieldMapping string `json:"field_mapping"`
+}
+
 type SystemEvent struct {
 	gorm.Model
 	Type      string    `json:"type"`

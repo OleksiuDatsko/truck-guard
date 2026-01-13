@@ -19,6 +19,7 @@ func InitDB(dsn string) {
 		&models.RawPlateEvent{},
 		&models.RawWeightEvent{},
 		&models.CameraConfig{},
+		&models.ScaleConfig{},
 	)
 	DB = db
 }

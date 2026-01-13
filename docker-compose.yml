@@ -114,6 +114,20 @@ services:
       - core
       - minio
 
+  weight-adapter:
+    build:
+      context: ./services/weight-adapter
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - CORE_URL=http://gateway/api
+      - REDIS_ADDR=redis:6379
+      - WORKER_API_KEY=${WORKER_SYSTEM_KEY}
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - redis
+      - core
+
   anpr:
     build:
       context: ./services/anpr

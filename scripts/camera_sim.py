@@ -10,7 +10,7 @@ from PIL import Image
 BASE_URL = os.getenv("BASE_URL", "http://localhost")
 AUTH_URL = f"{BASE_URL}/auth"
 CORE_API_URL = f"{BASE_URL}/api"
-INGEST_URL = f"{BASE_URL}/ingest"
+INGEST_URL = f"{BASE_URL}/ingest/camera"
 
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
 ADMIN_PASS = os.getenv("ADMIN_DEFAULT_PASSWORD", "admin123")
@@ -174,7 +174,7 @@ def main():
         while True:
             current_camera = random.choice(active_scenarios)
             send_camera_event(current_camera, current_camera["api_key"])
-            # time.sleep(random.randint(3, 7))
+            time.sleep(random.randint(3, 7))
     except KeyboardInterrupt:
         print("\n🛑 Simulator stopped.")
 

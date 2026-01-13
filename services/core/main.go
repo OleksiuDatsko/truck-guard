@@ -20,8 +20,8 @@ func main() {
 
 	api := r.Group("/")
 	{
-		api.GET("/cameras/:id", handlers.HandleGetConfigByID)
 		api.GET("/cameras/by-id/:camera_id", handlers.HandleGetConfigByCameraID)
+		api.GET("/scales/by-id/:scale_id", handlers.HandleGetConfigByScaleID)
 		configs := api.Group("/configs", middleware.RequireCorePermission("manage:configs"))
 		{
 			configs.GET("/presets", middleware.RequireCorePermission("read:presets"), handlers.HandleListPresets)
@@ -29,15 +29,25 @@ func main() {
 			configs.POST("/presets", middleware.RequireCorePermission("create:presets"), handlers.HandleCreatePreset)
 			configs.PUT("/presets/:id", middleware.RequireCorePermission("update:presets"), handlers.HandleUpdatePreset)
 			configs.DELETE("/presets/:id", middleware.RequireCorePermission("delete:presets"), handlers.HandleDeletePreset)
-
+			
 			configs.GET("/cameras", middleware.RequireCorePermission("read:cameras"), handlers.HandleGetCameras)
+			configs.GET("/cameras/:id", middleware.RequireCorePermission("read:cameras"), handlers.HandleGetConfigByID)
 			configs.POST("/cameras",
-				middleware.RequireCorePermission("create:cameras"),
+			middleware.RequireCorePermission("create:cameras"),
 				middleware.RequireCorePermission("create:keys"),
 				handlers.HandleCreateCamera,
 			)
 			configs.PUT("/cameras/:id", middleware.RequireCorePermission("update:cameras"), handlers.HandleUpdateCamera)
 			configs.DELETE("/cameras/:id", middleware.RequireCorePermission("delete:cameras"), handlers.HandleDeleteCamera)
+
+			configs.GET("/scales", middleware.RequireCorePermission("read:scales"), handlers.HandleGetScales)
+			configs.POST("/scales",
+				middleware.RequireCorePermission("create:scales"),
+				middleware.RequireCorePermission("create:keys"),
+				handlers.HandleCreateScale,
+			)
+			configs.PUT("/scales/:id", middleware.RequireCorePermission("update:scales"), handlers.HandleUpdateScale)
+			configs.DELETE("/scales/:id", middleware.RequireCorePermission("delete:scales"), handlers.HandleDeleteScale)
 
 		}
 

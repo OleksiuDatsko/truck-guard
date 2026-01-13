@@ -90,6 +90,10 @@ func seedData() {
 		{ID: "create:presets", Name: "Create Presets", Module: "core"},
 		{ID: "update:presets", Name: "Update Presets", Module: "core"},
 		{ID: "delete:presets", Name: "Delete Presets", Module: "core"},
+		{ID: "read:scales", Name: "Read Scales", Module: "core"},
+		{ID: "create:scales", Name: "Create Scales", Module: "core"},
+		{ID: "update:scales", Name: "Update Scales", Module: "core"},
+		{ID: "delete:scales", Name: "Delete Scales", Module: "core"},
 	}
 
 	for _, p := range perms {

@@ -104,3 +104,87 @@ func HandleDeleteCamera(c *gin.Context) {
 	repository.DB.Delete(&models.CameraConfig{}, id)
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }
+
+func HandleCreateScale(c *gin.Context) {
+	var config models.ScaleConfig
+	if err := c.ShouldBindJSON(&config); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	authClient := clients.NewAuthClient()
+	authResp, err := authClient.CreateApiKey(
+		c.Request.Context(),
+		config.Name+"_key",
+		[]string{"create:ingest"},
+		c.GetHeader("Authorization"),
+		c.GetHeader("X-Api-Key"),
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create authentication key: " + err.Error()})
+		return
+	}
+
+	config.SourceID = fmt.Sprintf("%v", authResp.ID)
+
+	if err := repository.DB.Create(&config).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save scale configuration"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"scale":   config,
+		"api_key": authResp.APIKey,
+	})
+}
+
+func HandleGetScales(c *gin.Context) {
+	var configs []models.ScaleConfig
+	var total int64
+	limit, offset, page := utils.GetPagination(c)
+
+	repository.DB.Model(&models.ScaleConfig{}).Count(&total)
+	repository.DB.Limit(limit).Offset(offset).Find(&configs)
+
+	utils.SendPaginatedResponse(c, configs, total, page, limit)
+}
+
+func HandleGetConfigByScaleID(c *gin.Context) {
+	scaleID := c.Param("scale_id")
+	var config models.ScaleConfig
+	if err := repository.DB.Where("scale_id = ?", scaleID).First(&config).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "scale config not found"})
+		return
+	}
+	c.JSON(http.StatusOK, config)
+}
+
+
+func HandleUpdateScale(c *gin.Context) {
+	id := c.Param("id")
+	var config models.ScaleConfig
+
+	if err := repository.DB.First(&config, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Scale configuration not found"})
+		return
+	}
+
+	if err := c.ShouldBindJSON(&config); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := repository.DB.Save(&config).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update scale configuration"})
+		return
+	}
+
+	c.JSON(http.StatusOK, config)
+}
+
+func HandleDeleteScale(c *gin.Context) {
+	id := c.Param("id")
+	repository.DB.Delete(&models.ScaleConfig{}, id)
+	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+}

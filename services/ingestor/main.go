@@ -18,7 +18,11 @@ func main() {
 	repository.InitMinio(endpoint, accessKey, secretKey)
 
 	r := gin.Default()
-	r.POST("/ingest", middleware.RequirePermission("create:ingest"), handlers.HandleIngest)
+	ingestLines := r.Group("/ingest", middleware.RequirePermission("create:ingest"))
+	{
+		ingestLines.POST("/camera", handlers.HandleCameraIngest)
+		ingestLines.POST("/weight", handlers.HandleWeightIngest)
+	}
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
