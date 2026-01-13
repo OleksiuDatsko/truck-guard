@@ -1,0 +1,1313 @@
+openapi: 3.1.0
+info:
+  title: "TruckGuard API"
+  version: "1.0.0"
+  description: "TruckGuard vehicle tracking system - Microservices Documentation"
+  x-logo-url: "https://truckguard.logo"
+
+servers:
+  - url: http://localhost:80
+    description: Dev Gateway (Nginx)
+  - url: https://api.truckguard.ua
+    description: Production Gateway
+
+tags:
+  - name: Auth
+    description: User authentication and session management
+  - name: Admin
+    description: Administrative operations for users, roles, and API keys
+  - name: Cameras
+    description: Camera configuration and discovery
+  - name: Scales
+    description: Scale configuration and discovery
+  - name: Configs
+    description: System configurations and presets
+  - name: Events
+    description: Processing vehicle events (plates, weights)
+  - name: Ingestor
+    description: Raw data ingestion from devices
+  - name: Gates
+    description: Physical entry/exit management
+  - name: Permits
+    description: Vehicle passes and event correlation
+
+security:
+  - bearerAuth: []
+  - apiKey: []
+
+paths:
+  # --- Auth Service ---
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login to the system
+      description: Authenticate with username and password to receive a JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        200:
+          description: Successfully authenticated
+          content:
+            application/json:
+              example: { token: "eyJhbG..." }
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: |
+        Create a new user account.
+        Permissions: `create:users`
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password, role_id]
+              properties:
+                username: { type: string }
+                password: { type: string }
+                role_id: { type: integer }
+      responses:
+        201:
+          description: User created
+        403:
+          $ref: "#/components/responses/Forbidden"
+
+  /auth/validate:
+    get:
+      tags: [Auth]
+      summary: Validate token or API Key
+      description: Verification endpoint used by Gateway to check access.
+      responses:
+        200:
+          description: Token is valid
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/health:
+    get:
+      tags: [Auth]
+      summary: Health check
+      responses:
+        200:
+          description: Service is healthy
+
+  # --- Auth Admin ---
+  /auth/admin/users:
+    get:
+      tags: [Admin]
+      summary: List all users
+      description: |
+        List all users in the system.
+        Permissions: `manage:settings`, `read:users`
+      responses:
+        200:
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/User" }
+
+  /auth/admin/users/{id}/role:
+    put:
+      tags: [Admin]
+      summary: Update user role
+      description: |
+        Update the role of a user.
+        Permissions: `manage:settings`, `update:users`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role_id]
+              properties:
+                role_id: { type: integer }
+      responses:
+        200:
+          description: Role updated
+
+  /auth/admin/users/{id}:
+    delete:
+      tags: [Admin]
+      summary: Delete user
+      description: |
+        Permanently delete a user.
+        Permissions: `manage:settings`, `delete:users`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: User deleted
+
+  /auth/admin/roles:
+    get:
+      tags: [Admin]
+      summary: List all roles
+      description: |
+        List all user roles.
+        Permissions: `manage:settings`, `read:roles`
+      security: [{ bearerAuth: [] }]
+      responses:
+        200:
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Role" }
+    post:
+      tags: [Admin]
+      summary: Create a new role
+      description: |
+        Create a new role with specific permissions.
+        Permissions: `manage:settings`, `create:roles`
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Role" }
+      responses:
+        201:
+          description: Role created
+
+  /auth/admin/roles/{id}:
+    put:
+      tags: [Admin]
+      summary: Update role
+      description: |
+        Update role name or description.
+        Permissions: `manage:settings`, `update:roles`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Role" }
+      responses:
+        200:
+          description: Role updated
+    delete:
+      tags: [Admin]
+      summary: Delete role
+      description: |
+        Permanently delete a role.
+        Permissions: `manage:settings`, `delete:roles`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Role deleted
+
+  /auth/admin/roles/{id}/permissions:
+    post:
+      tags: [Admin]
+      summary: Assign permissions to role
+      description: |
+        Replace permissions assigned to a role.
+        Permissions: `manage:settings`, `update:roles`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { type: string }
+      responses:
+        200:
+          description: Permissions assigned
+
+  /auth/admin/keys:
+    get:
+      tags: [Admin]
+      summary: List API Keys
+      description: |
+        List all IoT API Keys.
+        Permissions: `manage:settings`, `read:keys`
+      security: [{ bearerAuth: [] }]
+      responses:
+        200:
+          description: List of keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/APIKey" }
+    post:
+      tags: [Admin]
+      summary: Create a new API Key
+      description: |
+        Create a new IoT API Key with permissions.
+        Permissions: `manage:settings`, `create:keys`
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [owner_name, permissionIDs]
+              properties:
+                owner_name: { type: string }
+                permissionIDs:
+                  type: array
+                  items: { type: string }
+      responses:
+        201:
+          description: Key created
+          content:
+            application/json:
+              example: { key: "tg_...", id: 5 }
+
+  /auth/admin/keys/{id}:
+    put:
+      tags: [Admin]
+      summary: Update API key
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                owner_name: { type: string }
+                is_active: { type: boolean }
+      responses:
+        200:
+          description: Key updated
+    delete:
+      tags: [Admin]
+      summary: Delete API key
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Key deleted
+
+  /auth/admin/keys/{id}/permissions:
+    put:
+      tags: [Admin]
+      summary: Assign permissions to key
+      description: |
+        Replace permissions assigned to an API Key.
+        Permissions: `manage:settings`, `update:keys`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { type: string }
+      responses:
+        200:
+          description: Permissions assigned
+
+  /auth/admin/permissions:
+    get:
+      tags: [Admin]
+      summary: List all permissions
+      description: |
+        List all available permissions in the system.
+        Permissions: `manage:settings`, `read:roles`
+      responses:
+        200:
+          description: List of permissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Permission" }
+
+  # --- Core Service ---
+  /api/health:
+    get:
+      tags: [Configs]
+      summary: Core Health check
+      responses:
+        200:
+          description: Service is healthy
+
+  /api/cameras/by-id/{camera_id}:
+    get:
+      tags: [Cameras]
+      summary: Get camera config by Source ID
+      description: Retrieve camera configuration by external Source ID.
+      parameters:
+        - name: camera_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Camera config
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CameraConfig" }
+
+  /api/scales/by-id/{scale_id}:
+    get:
+      tags: [Scales]
+      summary: Get scale config by Source ID
+      description: Retrieve scale configuration by external Source ID.
+      parameters:
+        - name: scale_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Scale config
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ScaleConfig" }
+
+  /api/configs/presets:
+    get:
+      tags: [Configs]
+      summary: List camera presets
+      description: |
+        List all available camera configuration presets.
+        Permissions: `manage:configs`, `read:presets`
+      responses:
+        200:
+          description: List of presets
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CameraPreset" }
+    post:
+      tags: [Configs]
+      summary: Create camera preset
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CameraPreset" }
+      responses:
+        201:
+          description: Preset created
+
+  /api/configs/presets/{id}:
+    get:
+      tags: [Configs]
+      summary: Get preset by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Preset details
+    put:
+      tags: [Configs]
+      summary: Update preset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CameraPreset" }
+      responses:
+        200:
+          description: Preset updated
+    delete:
+      tags: [Configs]
+      summary: Delete preset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Preset deleted
+
+  /api/configs/cameras:
+    get:
+      tags: [Configs]
+      summary: List all cameras
+      description: |
+        List all registered cameras with pagination.
+        Permissions: `manage:configs`, `read:cameras`
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        200:
+          description: List of cameras
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/CameraConfig" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
+    post:
+      tags: [Configs]
+      summary: Register a new camera
+      description: |
+        Create a camera and automatically provision an API Key.
+        Permissions: `manage:configs`, `create:cameras`, `create:keys`
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CameraConfig" }
+      responses:
+        201:
+          description: Camera registered
+
+  /api/configs/cameras/{id}:
+    get:
+      tags: [Configs]
+      summary: Get camera config by ID
+      description: |
+        Retrieve camera configuration by internal database ID.
+        Permissions: `manage:configs`, `read:cameras`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Camera config
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CameraConfig" }
+        404:
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Configs]
+      summary: Update camera config
+      description: |
+        Update existing camera configuration.
+        Permissions: `manage:configs`, `update:cameras`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CameraConfig" }
+      responses:
+        200:
+          description: Camera updated
+    delete:
+      tags: [Configs]
+      summary: Delete camera config
+      description: |
+        Permanently delete camera configuration.
+        Permissions: `manage:configs`, `delete:cameras`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Camera deleted
+
+  /api/configs/scales:
+    get:
+      tags: [Configs]
+      summary: List all scales
+      description: |
+        List all registered weight scales with pagination.
+        Permissions: `manage:configs`, `read:scales`
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        200:
+          description: List of scales
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/ScaleConfig" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
+    post:
+      tags: [Configs]
+      summary: Register a new scale
+      description: |
+        Create a scale configuration and automatically provision an API Key.
+        Permissions: `manage:configs`, `create:scales`, `create:keys`
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScaleConfig" }
+      responses:
+        201:
+          description: Scale registered
+
+  /api/configs/scales/by-id/{scale_id}:
+    get:
+      tags: [Configs]
+      summary: Get scale config by Source ID
+      parameters:
+        - name: scale_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Scale config
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ScaleConfig" }
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /api/configs/scales/{id}:
+    put:
+      tags: [Configs]
+      summary: Update scale config
+      description: |
+        Update existing scale configuration.
+        Permissions: `manage:configs`, `update:scales`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScaleConfig" }
+      responses:
+        200:
+          description: Scale updated
+    delete:
+      tags: [Configs]
+      summary: Delete scale config
+      description: |
+        Permanently delete scale configuration.
+        Permissions: `manage:configs`, `delete:scales`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Scale deleted
+
+  /api/configs/gates:
+    get:
+      tags: [Gates]
+      summary: List all gates
+      description: |
+        List all physical gates.
+        Permissions: `read:gates`
+      responses:
+        200:
+          description: List of gates
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Gate" }
+    post:
+      tags: [Gates]
+      summary: Create a new gate
+      description: |
+        Create a new physical gate grouping.
+        Permissions: `create:gates`
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Gate" }
+      responses:
+        201:
+          description: Gate created
+
+  /api/configs/gates/{id}:
+    get:
+      tags: [Gates]
+      summary: Get gate by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Gate details
+    put:
+      tags: [Gates]
+      summary: Update gate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Gate" }
+      responses:
+        200:
+          description: Gate updated
+    delete:
+      tags: [Gates]
+      summary: Delete gate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Gate deleted
+
+  /api/configs/settings:
+    get:
+      tags: [Configs]
+      summary: List system settings
+      description: |
+        List all global system settings.
+        Permissions: `read:settings`
+      responses:
+        200:
+          description: List of settings
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SystemSetting" }
+    post:
+      tags: [Configs]
+      summary: Update system setting
+      description: |
+        Update or create a system setting (e.g., match_window_seconds).
+        Permissions: `update:settings`
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SystemSetting" }
+      responses:
+        200:
+          description: Setting updated
+
+  /api/configs/excluded-plates:
+    get:
+      tags: [Configs]
+      summary: List excluded plates
+      description: |
+        List all license plates in the ignore list.
+        Permissions: `read:excluded_plates`
+      responses:
+        200:
+          description: List of plates
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ExcludedPlate" }
+    post:
+      tags: [Configs]
+      summary: Add plate to ignore list
+      description: |
+        Add a plate to the exclusion list.
+        Permissions: `create:excluded_plates`
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExcludedPlate" }
+      responses:
+        201:
+          description: Plate added
+
+  /api/configs/excluded-plates/{id}:
+    delete:
+      tags: [Configs]
+      summary: Remove plate from ignore list
+      description: |
+        Remove a plate from the exclusion list by ID.
+        Permissions: `delete:excluded_plates`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Plate removed
+
+  /api/events/plate:
+    get:
+      tags: [Events]
+      summary: List plate recognition events
+      description: |
+        List all plate events with pagination.
+        Permissions: `read:events`
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        200:
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/RawPlateEvent" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
+    post:
+      tags: [Events]
+      summary: Submit a plate recognition event
+      description: |
+        Submit a new plate recognition event.
+        Permissions: `create:events`
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RawPlateEvent" }
+      responses:
+        202:
+          description: Event accepted for processing
+          content:
+            application/json:
+              example: { status: "processing", message: "Event queued" }
+
+  /api/events/plate/{id}:
+    get:
+      tags: [Events]
+      summary: Get plate event by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Event details
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RawPlateEvent" }
+        404:
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Events]
+      summary: Update plate event (manual correction)
+      description: |
+        Manually correct the recognized plate string.
+        Permissions: `update:events`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plate_corrected: { type: string }
+      responses:
+        200:
+          description: Event updated
+
+  /api/events/weight:
+    get:
+      tags: [Events]
+      summary: List weight events
+      description: |
+        List all weight events with pagination.
+        Permissions: `read:events`
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        200:
+          description: List of weight events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/RawWeightEvent" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
+    post:
+      tags: [Events]
+      summary: Submit a weight scale event
+      description: |
+        Submit a new weight event from a scale.
+        Permissions: `create:events`
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RawWeightEvent" }
+      responses:
+        202:
+          description: Event accepted
+
+  /api/events/weight/{id}:
+    get:
+      tags: [Events]
+      summary: Get weight event by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Weight event details
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RawWeightEvent" }
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /api/events/system:
+    get:
+      tags: [Events]
+      summary: List system events
+      description: |
+        List all system events (audit log).
+        Permissions: `read:events`
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        200:
+          description: List of system events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/SystemEvent" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
+
+  /api/events/system/{id}:
+    get:
+      tags: [Events]
+      summary: Get system event by ID
+      description: |
+        Retrieve system event details.
+        Permissions: `read:events`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: System event details
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SystemEvent" }
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /api/permits/:
+    get:
+      tags: [Permits]
+      summary: List all permits
+      description: |
+        List all vehicle permits (correlated passes).
+        Permissions: `read:events`
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        200:
+          description: List of permits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Permit" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
+
+  /api/permits/{id}:
+    get:
+      tags: [Permits]
+      summary: Get permit by ID
+      description: |
+        Retrieve detailed vehicle permit with image links.
+        Permissions: `read:events`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Permit details
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Permit" }
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  # --- Ingestor Service ---
+  /ingest/camera:
+    post:
+      tags: [Ingestor]
+      summary: Ingest raw camera data
+      description: |
+        Endpoint for cameras to upload images and metadata.
+        Permissions: `create:ingest`
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image, device_id]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                device_id: { type: string }
+                payload:
+                  type: string
+                  description: JSON or XML string depending on device
+      responses:
+        202:
+          description: Data ingested successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IngestEvent" }
+
+  /ingest/weight:
+    post:
+      tags: [Ingestor]
+      summary: Ingest raw weight data
+      description: |
+        Endpoint for scales to upload weight data.
+        Permissions: `create:ingest`
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [device_id]
+              properties:
+                device_id: { type: string }
+                payload:
+                  type: string
+                  description: JSON payload with weight data
+      responses:
+        202:
+          description: Data ingested successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IngestEvent" }
+
+  # --- ANPR Service ---
+  /anpr/recognize:
+    post:
+      tags: [Events]
+      summary: Recognize license plate from image
+      description: Forward image to ANPR engine for recognition.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Recognition result
+          content:
+            application/json:
+              example: { plate: "AA1234BB", confidence: 0.98 }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - Invalid or missing credentials
+      content:
+        application/json:
+          example: { error: "unauthorized" }
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+    NotFound:
+      description: Resource not found
+    InternalError:
+      description: Internal Server Error
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        role_id: { type: integer }
+        role: { $ref: "#/components/schemas/Role" }
+        created_at: { type: string, format: date-time }
+
+    Role:
+      type: object
+      required: [name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        permissions:
+          type: array
+          items: { $ref: "#/components/schemas/Permission" }
+
+    Permission:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        module: { type: string }
+
+    APIKey:
+      type: object
+      properties:
+        id: { type: integer }
+        owner_name: { type: string }
+        is_active: { type: boolean }
+        permissions:
+          type: array
+          items: { $ref: "#/components/schemas/Permission" }
+        created_at: { type: string, format: date-time }
+
+    CameraConfig:
+      type: object
+      required: [camera_id, name, format]
+      properties:
+        id: { type: integer }
+        camera_id: { type: string, description: "Source Identification String" }
+        name: { type: string }
+        description: { type: string }
+        preset_id: { type: integer }
+        format:
+          type: string
+          enum: [xml, json]
+        run_anpr: { type: boolean }
+        field_mapping:
+          { type: string, description: "JSON mapping for payload fields" }
+        gate_id: { type: integer, description: "Physical gate association" }
+
+    CameraPreset:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        format: { type: string, enum: [xml, json] }
+        run_anpr: { type: boolean }
+        field_mapping: { type: string }
+
+    SystemSetting:
+      type: object
+      required: [key, value]
+      properties:
+        id: { type: integer }
+        key: { type: string }
+        value: { type: string }
+
+    Gate:
+      type: object
+      required: [name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+
+    ExcludedPlate:
+      type: object
+      required: [plate]
+      properties:
+        id: { type: integer }
+        plate: { type: string }
+        comment: { type: string }
+
+    Permit:
+      type: object
+      properties:
+        id: { type: integer }
+        gate_id: { type: integer }
+        gate: { $ref: "#/components/schemas/Gate" }
+        plate_front: { type: string }
+        plate_back: { type: string }
+        total_weight: { type: number }
+        entry_time: { type: string, format: date-time }
+        is_closed: { type: boolean }
+        created_at: { type: string, format: date-time }
+        plate_events:
+          type: array
+          items: { $ref: "#/components/schemas/RawPlateEvent" }
+        weight_events:
+          type: array
+          items: { $ref: "#/components/schemas/RawWeightEvent" }
+
+    ScaleConfig:
+      type: object
+      required: [scale_id, name, format]
+      properties:
+        id: { type: integer }
+        scale_id: { type: string, description: "Source Identification String" }
+        name: { type: string }
+        description: { type: string }
+        format:
+          type: string
+          enum: [xml, json]
+        field_mapping:
+          { type: string, description: "JSON mapping for payload fields" }
+
+    RawPlateEvent:
+      type: object
+      required: [camera_id, plate, timestamp]
+      properties:
+        id: { type: integer }
+        camera_id: { type: string }
+        camera_name: { type: string }
+        plate: { type: string }
+        plate_corrected: { type: string }
+        corrected_by: { type: string }
+        is_manual: { type: boolean }
+        image_key: { type: string }
+        timestamp: { type: string, format: date-time }
+        suggestions:
+          { type: string, description: "JSONB suggestions from ANPR" }
+        system_event_id: { type: integer }
+        system_event: { $ref: "#/components/schemas/SystemEvent" }
+
+    RawWeightEvent:
+      type: object
+      required: [scale_id, weight, timestamp]
+      properties:
+        id: { type: integer }
+        scale_id: { type: string }
+        weight: { type: number, format: float }
+        raw_payload: { type: string, description: "Unparsed raw weight data" }
+        timestamp: { type: string, format: date-time }
+        system_event_id: { type: integer }
+        system_event: { $ref: "#/components/schemas/SystemEvent" }
+
+    SystemEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { type: string }
+        source_id: { type: string }
+        payload: { type: string }
+        timestamp: { type: string, format: date-time }
+
+    IngestEvent:
+      type: object
+      properties:
+        type: { type: string }
+        source_id: { type: string }
+        source_name: { type: string }
+        device_id: { type: string }
+        image_key: { type: string }
+        payload: { type: string }
+    PaginationMetadata:
+      type: object
+      properties:
+        total_items: { type: integer }
+        total_pages: { type: integer }
+        current_page: { type: integer }
+        limit: { type: integer }

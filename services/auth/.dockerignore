@@ -1,0 +1,14 @@
+.git
+.gitignore
+
+.env
+docker-compose.yaml
+Dockerfile
+
+README.md
+docs/
+
+auth-service
+bin/
+
+*_test.go

@@ -1,0 +1,15 @@
+services:
+  anpr-api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: anpr_service
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    shm_size: '2gb'    
+    volumes:
+      - nomeroff_models_cache:/root/.nomeroff_net
+
+volumes:
+  nomeroff_models_cache:

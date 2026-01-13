@@ -1,0 +1,182 @@
+package handlers
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/truckguard/core/src/logic"
+	"github.com/truckguard/core/src/models"
+	"github.com/truckguard/core/src/repository"
+	"github.com/truckguard/core/src/utils"
+)
+
+func HandlePlateEvent(c *gin.Context) {
+	var event models.RawPlateEvent
+
+	if err := c.ShouldBindBodyWith(&event, binding.JSON); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if sysEventID, exists := c.Get("system_event_id"); exists {
+		event.SystemEventID = sysEventID.(uint)
+	}
+
+	if err := repository.DB.Create(&event).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save event"})
+		return
+	}
+
+	go logic.MatchPlateEvent(&event)
+
+	c.JSON(http.StatusAccepted, gin.H{"status": "processing", "id": event.ID})
+}
+
+func HandlePatchPlateEvent(c *gin.Context) {
+	id := c.Param("id")
+	var input struct {
+		PlateCorrected string `json:"plate_corrected"`
+	}
+	if err := c.BindJSON(&input); err != nil {
+		c.Status(400)
+		return
+	}
+	var event models.RawPlateEvent
+	if err := repository.DB.First(&event, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
+		return
+	}
+
+	oldEffectivePlate := event.Plate
+	if event.PlateCorrected != "" {
+		oldEffectivePlate = event.PlateCorrected
+	}
+
+	userID := c.GetHeader("X-User-ID")
+	if err := repository.DB.Model(&models.RawPlateEvent{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"plate_corrected": input.PlateCorrected,
+		"corrected_by":    userID,
+		"is_manual":       true,
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update event"})
+		return
+	}
+
+	var permits []models.Permit
+	err := repository.DB.Joins("JOIN permit_plate_events ON permit_plate_events.permit_id = permits.id").
+		Where("permit_plate_events.raw_plate_event_id = ?", id).
+		Find(&permits).Error
+
+	if err == nil {
+		for _, permit := range permits {
+			updated := false
+			if permit.PlateFront == oldEffectivePlate {
+				permit.PlateFront = input.PlateCorrected
+				updated = true
+			}
+			if permit.PlateBack == oldEffectivePlate {
+				permit.PlateBack = input.PlateCorrected
+				updated = true
+			}
+			if updated {
+				repository.DB.Save(&permit)
+			}
+		}
+	}
+	c.Status(200)
+}
+
+func HandleGetPlateEvents(c *gin.Context) {
+	var events []models.RawPlateEvent
+	var total int64
+	limit, offset, page := utils.GetPagination(c)
+
+	repository.DB.Model(&models.RawPlateEvent{}).Count(&total)
+
+	if err := repository.DB.Limit(limit).Offset(offset).Order("created_at desc").Find(&events).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch events"})
+		return
+	}
+	utils.SendPaginatedResponse(c, events, total, page, limit)
+}
+
+func HandleGetPlateEventByID(c *gin.Context) {
+	id := c.Param("id")
+	var event models.RawPlateEvent
+	if err := repository.DB.First(&event, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
+		return
+	}
+	c.JSON(http.StatusOK, event)
+}
+
+func HandleWeightEvent(c *gin.Context) {
+	var event models.RawWeightEvent
+
+	if err := c.ShouldBindBodyWith(&event, binding.JSON); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if sysEventID, exists := c.Get("system_event_id"); exists {
+		event.SystemEventID = sysEventID.(uint)
+	}
+
+	if err := repository.DB.Create(&event).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record weight"})
+		return
+	}
+
+	go logic.MatchWeightEvent(&event)
+
+	c.JSON(http.StatusAccepted, gin.H{"status": "weight_recorded", "id": event.ID})
+}
+
+func HandleGetWeightEvents(c *gin.Context) {
+	var events []models.RawWeightEvent
+	var total int64
+	limit, offset, page := utils.GetPagination(c)
+
+	repository.DB.Model(&models.RawWeightEvent{}).Count(&total)
+
+	if err := repository.DB.Limit(limit).Offset(offset).Order("created_at desc").Find(&events).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch weight events"})
+		return
+	}
+	utils.SendPaginatedResponse(c, events, total, page, limit)
+}
+
+func HandleGetWeightEventByID(c *gin.Context) {
+	id := c.Param("id")
+	var event models.RawWeightEvent
+	if err := repository.DB.First(&event, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Weight event not found"})
+		return
+	}
+	c.JSON(http.StatusOK, event)
+}
+
+func HandleGetSystemEvents(c *gin.Context) {
+	var events []models.SystemEvent
+	var total int64
+	limit, offset, page := utils.GetPagination(c)
+
+	repository.DB.Model(&models.SystemEvent{}).Count(&total)
+
+	if err := repository.DB.Limit(limit).Offset(offset).Order("created_at desc").Find(&events).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch system events"})
+		return
+	}
+	utils.SendPaginatedResponse(c, events, total, page, limit)
+}
+
+func HandleGetSystemEventByID(c *gin.Context) {
+	id := c.Param("id")
+	var event models.SystemEvent
+	if err := repository.DB.First(&event, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "System event not found"})
+		return
+	}
+	c.JSON(http.StatusOK, event)
+}
