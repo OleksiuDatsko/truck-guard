@@ -8,11 +8,12 @@ The **Core Service** is the central management unit of the TruckGuard system. It
 
 It manages the persistence layer for the entire system's configuration and historical data:
 
-*   **Configuration Manager:** Stores and serves camera and weight scale configurations, presets, and system-wide settings.
-*   **Event Orchestrator:** Receives processed data from cameras and scales (via Adapters/Ingestor) and saves it as formal `PlateEvents` or `WeightEvents`.
-*   **Integration:** Communicates with the **Auth Service** to automatically provision API keys for new cameras and scales.
+- **Configuration Manager:** Stores and serves camera and weight scale configurations, presets, and system-wide settings.
+- **Event Orchestrator:** Receives processed data from cameras and scales (via Adapters/Ingestor) and saves it as formal `PlateEvents` or `WeightEvents`.
+- **Integration:** Communicates with the **Auth Service** to automatically provision API keys for new cameras and scales.
 
 The project follows a modular Go structure:
+
 - `src/api`: REST handlers and validation middleware.
 - `src/models`: Domain entities (Cameras, Presets, Events).
 - `src/repository`: GORM-based data access layer.
@@ -21,9 +22,9 @@ The project follows a modular Go structure:
 
 #### **Prerequisites**
 
-*   **Go** (version 1.25 or higher)
-*   **PostgreSQL**
-*   **Environment Variables**
+- **Go** (version 1.25 or higher)
+- **PostgreSQL**
+- **Environment Variables**
 
 #### **Configuration**
 
@@ -35,11 +36,13 @@ DATABASE_URL=postgres://user:pass@localhost:5432/truckguard
 #### **Run Commands**
 
 1.  **Install dependencies:**
+
     ```bash
     go mod tidy
     ```
 
 2.  **Start the service:**
+
     ```bash
     go run .
     ```
