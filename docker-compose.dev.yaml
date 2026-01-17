@@ -93,6 +93,7 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgres://${CORE_DB_USER}:${CORE_DB_PASSWORD}@db:5432/${CORE_DB_NAME}
+      - REDIS_ADDR=redis:6379
       - PORT=8080
       - AUTH_SERVICE_URL=http://gateway/auth
     ports:
@@ -157,6 +158,26 @@ services:
     ports:
       - "6379:6379"
 
+  registry:
+    image: patrikx3/p3x-redis-ui:latest
+    ports:
+      - "7843:7843"
+    volumes:
+      - ./redis-ui-settings:/settings
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "8888:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
+
   minio:
     image: minio/minio
     restart: unless-stopped
@@ -197,3 +218,4 @@ volumes:
   postgres_data:
   minio_data:
   nomeroff_models_cache:
+  pgadmin-data:
