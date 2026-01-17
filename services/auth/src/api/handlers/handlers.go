@@ -288,7 +288,19 @@ func HandleDeleteKey(c *gin.Context) {
 	var key models.APIKey
 	if err := repository.DB.First(&key, id).Error; err == nil {
 		repository.RDB.Del(context.Background(), "auth:"+key.KeyHash)
-		repository.DB.Delete(&key)
+
+		if err := repository.DB.Model(&key).Association("Permissions").Clear(); err != nil {
+			c.JSON(500, gin.H{"error": "Failed to clear permissions: " + err.Error()})
+			return
+		}
+
+		if err := repository.DB.Delete(&key).Error; err != nil {
+			c.JSON(500, gin.H{"error": "Failed to delete key: " + err.Error()})
+			return
+		}
+	} else {
+		c.JSON(404, gin.H{"error": "Key not found"})
+		return
 	}
 	c.Status(204)
 }
