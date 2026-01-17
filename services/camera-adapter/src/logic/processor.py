@@ -47,8 +47,9 @@ class EventProcessor:
 
         if plate:
             final_event = {
-                "camera_id": source_id,
-                "camera_name": config.get("name", source_id),
+                "camera_source_id": source_id,
+                "camera_source_name": config.get("name", source_id),
+                "camera_id": f"{config.get("ID")}",
                 "plate": plate.upper().replace(" ", ""),
                 "suggestions": json.dumps(suggestions), 
                 "image_key": image_key,
@@ -56,4 +57,4 @@ class EventProcessor:
                 "raw_payload": data.get("payload"),
             }
             self.core.send_event(final_event)
-            logger.info(f"Successfully processed plate: {plate}")
+            logger.info(f"Successfully processed plate: {final_event}")

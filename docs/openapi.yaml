@@ -13,23 +13,41 @@ servers:
 
 tags:
   - name: Auth
-    description: User authentication and session management
-  - name: Admin
-    description: Administrative operations for users, roles, and API keys
-  - name: Cameras
-    description: Camera configuration and discovery
-  - name: Scales
-    description: Scale configuration and discovery
-  - name: Configs
-    description: System configurations and presets
-  - name: Events
-    description: Processing vehicle events (plates, weights)
+    description: Public authentication endpoints
+  - name: "Admin: Users"
+    description: User management
+  - name: "Admin: Roles"
+    description: Role and permission management
+  - name: "Admin: Keys"
+    description: API Key management
+  - name: "Hardware: Cameras"
+    description: Camera discovery and config
+  - name: "Hardware: Scales"
+    description: Scale discovery and config
+  - name: "Hardware: Gates"
+    description: Gate configuration
+  - name: "System: Presets"
+    description: Camera presets
+  - name: "System: Settings"
+    description: Global system settings
+  - name: "System: Exclusions"
+    description: Excluded plates management
+  - name: "Events: Gate"
+    description: Aggregated gate events
+  - name: "Events: Raw"
+    description: Raw plate and weight events
+  - name: "Events: System"
+    description: System/Audit events
+  - name: "Operations: Permits"
+    description: Permit management
+  - name: "Operations: Flows"
+    description: Flow management
   - name: Ingestor
-    description: Raw data ingestion from devices
-  - name: Gates
-    description: Physical entry/exit management
-  - name: Permits
-    description: Vehicle passes and event correlation
+    description: Data ingestion
+  - name: ANPR
+    description: Recognition service
+  - name: Health
+    description: Health checks
 
 security:
   - bearerAuth: []
@@ -100,7 +118,7 @@ paths:
 
   /auth/health:
     get:
-      tags: [Auth]
+      tags: [Health]
       summary: Health check
       responses:
         200:
@@ -109,7 +127,7 @@ paths:
   # --- Auth Admin ---
   /auth/admin/users:
     get:
-      tags: [Admin]
+      tags: ["Admin: Users"]
       summary: List all users
       description: |
         List all users in the system.
@@ -125,7 +143,7 @@ paths:
 
   /auth/admin/users/{id}/role:
     put:
-      tags: [Admin]
+      tags: ["Admin: Users"]
       summary: Update user role
       description: |
         Update the role of a user.
@@ -149,7 +167,7 @@ paths:
 
   /auth/admin/users/{id}:
     delete:
-      tags: [Admin]
+      tags: ["Admin: Users"]
       summary: Delete user
       description: |
         Permanently delete a user.
@@ -165,7 +183,7 @@ paths:
 
   /auth/admin/roles:
     get:
-      tags: [Admin]
+      tags: ["Admin: Roles"]
       summary: List all roles
       description: |
         List all user roles.
@@ -180,7 +198,7 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/Role" }
     post:
-      tags: [Admin]
+      tags: ["Admin: Roles"]
       summary: Create a new role
       description: |
         Create a new role with specific permissions.
@@ -196,7 +214,7 @@ paths:
 
   /auth/admin/roles/{id}:
     put:
-      tags: [Admin]
+      tags: ["Admin: Roles"]
       summary: Update role
       description: |
         Update role name or description.
@@ -214,7 +232,7 @@ paths:
         200:
           description: Role updated
     delete:
-      tags: [Admin]
+      tags: ["Admin: Roles"]
       summary: Delete role
       description: |
         Permanently delete a role.
@@ -230,7 +248,7 @@ paths:
 
   /auth/admin/roles/{id}/permissions:
     post:
-      tags: [Admin]
+      tags: ["Admin: Roles"]
       summary: Assign permissions to role
       description: |
         Replace permissions assigned to a role.
@@ -252,7 +270,7 @@ paths:
 
   /auth/admin/keys:
     get:
-      tags: [Admin]
+      tags: ["Admin: Keys"]
       summary: List API Keys
       description: |
         List all IoT API Keys.
@@ -267,7 +285,7 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/APIKey" }
     post:
-      tags: [Admin]
+      tags: ["Admin: Keys"]
       summary: Create a new API Key
       description: |
         Create a new IoT API Key with permissions.
@@ -293,7 +311,7 @@ paths:
 
   /auth/admin/keys/{id}:
     put:
-      tags: [Admin]
+      tags: ["Admin: Keys"]
       summary: Update API key
       parameters:
         - name: id
@@ -312,7 +330,7 @@ paths:
         200:
           description: Key updated
     delete:
-      tags: [Admin]
+      tags: ["Admin: Keys"]
       summary: Delete API key
       parameters:
         - name: id
@@ -325,7 +343,7 @@ paths:
 
   /auth/admin/keys/{id}/permissions:
     put:
-      tags: [Admin]
+      tags: ["Admin: Keys"]
       summary: Assign permissions to key
       description: |
         Replace permissions assigned to an API Key.
@@ -347,7 +365,7 @@ paths:
 
   /auth/admin/permissions:
     get:
-      tags: [Admin]
+      tags: ["Admin: Roles"]
       summary: List all permissions
       description: |
         List all available permissions in the system.
@@ -364,7 +382,7 @@ paths:
   # --- Core Service ---
   /api/health:
     get:
-      tags: [Configs]
+      tags: [Health]
       summary: Core Health check
       responses:
         200:
@@ -372,7 +390,7 @@ paths:
 
   /api/cameras/by-id/{camera_id}:
     get:
-      tags: [Cameras]
+      tags: ["Hardware: Cameras"]
       summary: Get camera config by Source ID
       description: Retrieve camera configuration by external Source ID.
       parameters:
@@ -389,7 +407,7 @@ paths:
 
   /api/scales/by-id/{scale_id}:
     get:
-      tags: [Scales]
+      tags: ["Hardware: Scales"]
       summary: Get scale config by Source ID
       description: Retrieve scale configuration by external Source ID.
       parameters:
@@ -406,7 +424,7 @@ paths:
 
   /api/configs/presets:
     get:
-      tags: [Configs]
+      tags: ["System: Presets"]
       summary: List camera presets
       description: |
         List all available camera configuration presets.
@@ -420,7 +438,7 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/CameraPreset" }
     post:
-      tags: [Configs]
+      tags: ["System: Presets"]
       summary: Create camera preset
       requestBody:
         content:
@@ -432,7 +450,7 @@ paths:
 
   /api/configs/presets/{id}:
     get:
-      tags: [Configs]
+      tags: ["System: Presets"]
       summary: Get preset by ID
       parameters:
         - name: id
@@ -443,7 +461,7 @@ paths:
         200:
           description: Preset details
     put:
-      tags: [Configs]
+      tags: ["System: Presets"]
       summary: Update preset
       parameters:
         - name: id
@@ -458,7 +476,7 @@ paths:
         200:
           description: Preset updated
     delete:
-      tags: [Configs]
+      tags: ["System: Presets"]
       summary: Delete preset
       parameters:
         - name: id
@@ -471,7 +489,7 @@ paths:
 
   /api/configs/cameras:
     get:
-      tags: [Configs]
+      tags: ["Hardware: Cameras"]
       summary: List all cameras
       description: |
         List all registered cameras with pagination.
@@ -496,7 +514,7 @@ paths:
                     items: { $ref: "#/components/schemas/CameraConfig" }
                   metadata: { $ref: "#/components/schemas/PaginationMetadata" }
     post:
-      tags: [Configs]
+      tags: ["Hardware: Cameras"]
       summary: Register a new camera
       description: |
         Create a camera and automatically provision an API Key.
@@ -511,7 +529,7 @@ paths:
 
   /api/configs/cameras/{id}:
     get:
-      tags: [Configs]
+      tags: ["Hardware: Cameras"]
       summary: Get camera config by ID
       description: |
         Retrieve camera configuration by internal database ID.
@@ -530,7 +548,7 @@ paths:
         404:
           $ref: "#/components/responses/NotFound"
     put:
-      tags: [Configs]
+      tags: ["Hardware: Cameras"]
       summary: Update camera config
       description: |
         Update existing camera configuration.
@@ -548,7 +566,7 @@ paths:
         200:
           description: Camera updated
     delete:
-      tags: [Configs]
+      tags: ["Hardware: Cameras"]
       summary: Delete camera config
       description: |
         Permanently delete camera configuration.
@@ -564,7 +582,7 @@ paths:
 
   /api/configs/scales:
     get:
-      tags: [Configs]
+      tags: ["Hardware: Scales"]
       summary: List all scales
       description: |
         List all registered weight scales with pagination.
@@ -589,7 +607,7 @@ paths:
                     items: { $ref: "#/components/schemas/ScaleConfig" }
                   metadata: { $ref: "#/components/schemas/PaginationMetadata" }
     post:
-      tags: [Configs]
+      tags: ["Hardware: Scales"]
       summary: Register a new scale
       description: |
         Create a scale configuration and automatically provision an API Key.
@@ -604,7 +622,7 @@ paths:
 
   /api/configs/scales/by-id/{scale_id}:
     get:
-      tags: [Configs]
+      tags: ["Hardware: Scales"]
       summary: Get scale config by Source ID
       parameters:
         - name: scale_id
@@ -622,7 +640,7 @@ paths:
 
   /api/configs/scales/{id}:
     put:
-      tags: [Configs]
+      tags: ["Hardware: Scales"]
       summary: Update scale config
       description: |
         Update existing scale configuration.
@@ -640,7 +658,7 @@ paths:
         200:
           description: Scale updated
     delete:
-      tags: [Configs]
+      tags: ["Hardware: Scales"]
       summary: Delete scale config
       description: |
         Permanently delete scale configuration.
@@ -656,7 +674,7 @@ paths:
 
   /api/configs/gates:
     get:
-      tags: [Gates]
+      tags: ["Hardware: Gates"]
       summary: List all gates
       description: |
         List all physical gates.
@@ -670,7 +688,7 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/Gate" }
     post:
-      tags: [Gates]
+      tags: ["Hardware: Gates"]
       summary: Create a new gate
       description: |
         Create a new physical gate grouping.
@@ -685,7 +703,7 @@ paths:
 
   /api/configs/gates/{id}:
     get:
-      tags: [Gates]
+      tags: ["Hardware: Gates"]
       summary: Get gate by ID
       parameters:
         - name: id
@@ -696,7 +714,7 @@ paths:
         200:
           description: Gate details
     put:
-      tags: [Gates]
+      tags: ["Hardware: Gates"]
       summary: Update gate
       parameters:
         - name: id
@@ -711,7 +729,7 @@ paths:
         200:
           description: Gate updated
     delete:
-      tags: [Gates]
+      tags: ["Hardware: Gates"]
       summary: Delete gate
       parameters:
         - name: id
@@ -724,7 +742,7 @@ paths:
 
   /api/configs/settings:
     get:
-      tags: [Configs]
+      tags: ["System: Settings"]
       summary: List system settings
       description: |
         List all global system settings.
@@ -738,7 +756,7 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/SystemSetting" }
     post:
-      tags: [Configs]
+      tags: ["System: Settings"]
       summary: Update system setting
       description: |
         Update or create a system setting (e.g., match_window_seconds).
@@ -753,7 +771,7 @@ paths:
 
   /api/configs/excluded-plates:
     get:
-      tags: [Configs]
+      tags: ["System: Exclusions"]
       summary: List excluded plates
       description: |
         List all license plates in the ignore list.
@@ -767,7 +785,7 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/ExcludedPlate" }
     post:
-      tags: [Configs]
+      tags: ["System: Exclusions"]
       summary: Add plate to ignore list
       description: |
         Add a plate to the exclusion list.
@@ -782,7 +800,7 @@ paths:
 
   /api/configs/excluded-plates/{id}:
     delete:
-      tags: [Configs]
+      tags: ["System: Exclusions"]
       summary: Remove plate from ignore list
       description: |
         Remove a plate from the exclusion list by ID.
@@ -796,9 +814,93 @@ paths:
         204:
           description: Plate removed
 
+  /api/configs/flows:
+    get:
+      tags: ["Operations: Flows"]
+      summary: List all flows
+      description: |
+        List all configured flows with their steps.
+        Permissions: `read:flows`
+      responses:
+        200:
+          description: List of flows
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Flow" }
+    post:
+      tags: ["Operations: Flows"]
+      summary: Create new flow
+      description: |
+        Create a new flow definition.
+        Create a new flow definition.
+        Permissions: `create:flows`
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Flow" }
+      responses:
+        201:
+          description: Flow created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Flow" }
+
+  /api/configs/flows/{id}:
+    get:
+      tags: ["Operations: Flows"]
+      summary: Get flow details
+      description: |
+        Get detailed flow information.
+        Permissions: `read:flows`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Flow details
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Flow" }
+    put:
+      tags: ["Operations: Flows"]
+      summary: Update flow
+      description: |
+        Update an existing flow.
+        Permissions: `update:flows`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Flow" }
+      responses:
+        200:
+          description: Flow updated
+    delete:
+      tags: ["Operations: Flows"]
+      summary: Delete flow
+      description: |
+        Delete a flow.
+        Permissions: `delete:flows`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Flow deleted
+
   /api/events/plate:
     get:
-      tags: [Events]
+      tags: ["Events: Raw"]
       summary: List plate recognition events
       description: |
         List all plate events with pagination.
@@ -823,7 +925,7 @@ paths:
                     items: { $ref: "#/components/schemas/RawPlateEvent" }
                   metadata: { $ref: "#/components/schemas/PaginationMetadata" }
     post:
-      tags: [Events]
+      tags: ["Events: Raw"]
       summary: Submit a plate recognition event
       description: |
         Submit a new plate recognition event.
@@ -841,7 +943,7 @@ paths:
 
   /api/events/plate/{id}:
     get:
-      tags: [Events]
+      tags: ["Events: Raw"]
       summary: Get plate event by ID
       parameters:
         - name: id
@@ -857,7 +959,7 @@ paths:
         404:
           $ref: "#/components/responses/NotFound"
     patch:
-      tags: [Events]
+      tags: ["Events: Raw"]
       summary: Update plate event (manual correction)
       description: |
         Manually correct the recognized plate string.
@@ -880,7 +982,7 @@ paths:
 
   /api/events/weight:
     get:
-      tags: [Events]
+      tags: ["Events: Raw"]
       summary: List weight events
       description: |
         List all weight events with pagination.
@@ -905,7 +1007,7 @@ paths:
                     items: { $ref: "#/components/schemas/RawWeightEvent" }
                   metadata: { $ref: "#/components/schemas/PaginationMetadata" }
     post:
-      tags: [Events]
+      tags: ["Events: Raw"]
       summary: Submit a weight scale event
       description: |
         Submit a new weight event from a scale.
@@ -920,7 +1022,7 @@ paths:
 
   /api/events/weight/{id}:
     get:
-      tags: [Events]
+      tags: ["Events: Raw"]
       summary: Get weight event by ID
       parameters:
         - name: id
@@ -938,7 +1040,7 @@ paths:
 
   /api/events/system:
     get:
-      tags: [Events]
+      tags: ["Events: System"]
       summary: List system events
       description: |
         List all system events (audit log).
@@ -965,7 +1067,7 @@ paths:
 
   /api/events/system/{id}:
     get:
-      tags: [Events]
+      tags: ["Events: System"]
       summary: Get system event by ID
       description: |
         Retrieve system event details.
@@ -984,9 +1086,51 @@ paths:
         404:
           $ref: "#/components/responses/NotFound"
 
+  /api/events/gate:
+    get:
+      tags: ["Events: Gate"]
+      summary: List gate events
+      description: |
+        List all aggregated gate events.
+        Permissions: `read:events`
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+      responses:
+        200:
+          description: List of gate events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/GateEvent" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
+
+  /api/events/gate/{id}:
+    get:
+      tags: ["Events: Gate"]
+      summary: Get gate event by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Gate event details
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GateEvent" }
+        404:
+          $ref: "#/components/responses/NotFound"
+
   /api/permits/:
     get:
-      tags: [Permits]
+      tags: ["Operations: Permits"]
       summary: List all permits
       description: |
         List all vehicle permits (correlated passes).
@@ -1013,7 +1157,7 @@ paths:
 
   /api/permits/{id}:
     get:
-      tags: [Permits]
+      tags: ["Operations: Permits"]
       summary: Get permit by ID
       description: |
         Retrieve detailed vehicle permit with image links.
@@ -1089,7 +1233,7 @@ paths:
   # --- ANPR Service ---
   /anpr/recognize:
     post:
-      tags: [Events]
+      tags: [ANPR]
       summary: Recognize license plate from image
       description: Forward image to ANPR engine for recognition.
       requestBody:
@@ -1214,6 +1358,8 @@ components:
         id: { type: integer }
         name: { type: string }
         description: { type: string }
+        is_entry: { type: boolean }
+        is_exit: { type: boolean }
 
     ExcludedPlate:
       type: object
@@ -1223,16 +1369,39 @@ components:
         plate: { type: string }
         comment: { type: string }
 
+    Flow:
+      type: object
+      required: [name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        steps:
+          type: array
+          items: { $ref: "#/components/schemas/FlowStep" }
+
+    FlowStep:
+      type: object
+      properties:
+        id: { type: integer }
+        flow_id: { type: integer }
+        gate_id: { type: integer }
+        sequence: { type: integer }
+        gate: { $ref: "#/components/schemas/Gate" }
+
     Permit:
       type: object
       properties:
         id: { type: integer }
+        flow_id: { type: integer }
+        flow: { $ref: "#/components/schemas/Flow" }
         gate_id: { type: integer }
         gate: { $ref: "#/components/schemas/Gate" }
         plate_front: { type: string }
         plate_back: { type: string }
         total_weight: { type: number }
         entry_time: { type: string, format: date-time }
+        exit_time: { type: string, format: date-time }
         is_closed: { type: boolean }
         created_at: { type: string, format: date-time }
         plate_events:
@@ -1311,3 +1480,17 @@ components:
         total_pages: { type: integer }
         current_page: { type: integer }
         limit: { type: integer }
+
+    GateEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        gate_id: { type: integer }
+        permit_id: { type: integer }
+        timestamp: { type: string, format: date-time }
+        plate_events:
+          type: array
+          items: { $ref: "#/components/schemas/RawPlateEvent" }
+        weight_events:
+          type: array
+          items: { $ref: "#/components/schemas/RawWeightEvent" }

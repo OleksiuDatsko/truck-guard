@@ -203,6 +203,31 @@ func HandleUpdateScale(c *gin.Context) {
 
 func HandleDeleteScale(c *gin.Context) {
 	id := c.Param("id")
-	repository.DB.Delete(&models.ScaleConfig{}, id)
+	var config models.ScaleConfig
+
+	if err := repository.DB.First(&config, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Scale configuration not found"})
+		return
+	}
+
+	if config.SourceID != "" {
+		authClient := clients.NewAuthClient()
+		err := authClient.DeleteApiKey(
+			c.Request.Context(),
+			config.SourceID,
+			c.GetHeader("Authorization"),
+			c.GetHeader("X-Api-Key"),
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete associated API key: " + err.Error()})
+			return
+		}
+	}
+
+	if err := repository.DB.Delete(&config).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete scale configuration"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }

@@ -104,6 +104,10 @@ func seedData() {
 		{ID: "create:excluded_plates", Name: "Create Excluded Plates", Module: "core"},
 		{ID: "delete:excluded_plates", Name: "Delete Excluded Plates", Module: "core"},
 		{ID: "read:permits", Name: "Read Permits", Module: "core"},
+		{ID: "read:flows", Name: "Read Flows", Module: "core"},
+		{ID: "create:flows", Name: "Create Flows", Module: "core"},
+		{ID: "update:flows", Name: "Update Flows", Module: "core"},
+		{ID: "delete:flows", Name: "Delete Flows", Module: "core"},
 	}
 
 	for _, p := range perms {

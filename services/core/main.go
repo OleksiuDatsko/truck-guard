@@ -12,6 +12,7 @@ import (
 
 func main() {
 	repository.InitDB(os.Getenv("DATABASE_URL"))
+	repository.InitRedis(os.Getenv("REDIS_ADDR"))
 
 	r := gin.Default()
 
@@ -63,6 +64,12 @@ func main() {
 			configs.POST("/excluded-plates", middleware.RequireCorePermission("create:excluded_plates"), handlers.HandleCreateExcludedPlate)
 			configs.DELETE("/excluded-plates/:id", middleware.RequireCorePermission("delete:excluded_plates"), handlers.HandleDeleteExcludedPlate)
 
+			configs.GET("/flows", middleware.RequireCorePermission("read:flows"), handlers.HandleListFlows)
+			configs.GET("/flows/:id", middleware.RequireCorePermission("read:flows"), handlers.HandleGetFlow)
+			configs.POST("/flows", middleware.RequireCorePermission("create:flows"), handlers.HandleCreateFlow)
+			configs.PUT("/flows/:id", middleware.RequireCorePermission("update:flows"), handlers.HandleUpdateFlow)
+			configs.DELETE("/flows/:id", middleware.RequireCorePermission("delete:flows"), handlers.HandleDeleteFlow)
+
 		}
 
 		events := api.Group("/events")
@@ -90,6 +97,9 @@ func main() {
 
 			events.GET("/system", middleware.RequireCorePermission("read:events"), handlers.HandleGetSystemEvents)
 			events.GET("/system/:id", middleware.RequireCorePermission("read:events"), handlers.HandleGetSystemEventByID)
+
+			events.GET("/gate", middleware.RequireCorePermission("read:events"), handlers.HandleGetGateEvents)
+			events.GET("/gate/:id", middleware.RequireCorePermission("read:events"), handlers.HandleGetGateEventByID)
 		}
 
 		permits := api.Group("/permits")
