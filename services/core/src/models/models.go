@@ -163,3 +163,15 @@ type ExcludedPlate struct {
 	Plate   string `gorm:"uniqueIndex;not null" json:"plate"`
 	Comment string `json:"comment"`
 }
+
+type User struct {
+	gorm.Model
+	AuthID      uint   `gorm:"uniqueIndex" json:"auth_id"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	ThirdName   string `json:"third_name"`
+	PhoneNumber string `json:"phone_number"`
+	Email       string `json:"email"`
+	Notes       string `json:"notes"`
+	Role        string `json:"role"`
+}

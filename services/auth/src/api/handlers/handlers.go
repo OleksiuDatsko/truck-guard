@@ -35,11 +35,16 @@ func HandleRegister(c *gin.Context) {
 	repository.DB.Where("name = ?", roleName).First(&role)
 
 	u := models.User{Username: b.User, PasswordHash: string(h), RoleID: role.ID}
-	if err := repository.DB.Create(&u).Error; err != nil {
+	if err := repository.DB.Preload("Role").Preload("Role.Permissions").Create(&u).Error; err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			c.JSON(409, gin.H{"error": "User already exists"})
+			return
+		}
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.Status(201)
+
+	c.JSON(201, u)
 }
 
 func HandleLogin(c *gin.Context) {

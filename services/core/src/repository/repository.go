@@ -30,6 +30,7 @@ func InitDB(dsn string) {
 		&models.SystemSetting{},
 		&models.ExcludedPlate{},
 		&models.Permit{},
+		&models.User{},
 	)
 	DB = db
 }

@@ -16,6 +16,8 @@ tags:
     description: Public authentication endpoints
   - name: "Admin: Users"
     description: User management
+  - name: "Core: Users"
+    description: Core user profile management
   - name: "Admin: Roles"
     description: Role and permission management
   - name: "Admin: Keys"
@@ -1180,6 +1182,115 @@ paths:
         404:
           $ref: "#/components/responses/NotFound"
 
+  # --- Core: Users ---
+  /api/users/:
+    get:
+      tags: ["Core: Users"]
+      summary: List all users
+      description: |
+        List all users in the system (Core profiles).
+        Permissions: `read:users`
+      responses:
+        200:
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/UserCore" }
+    post:
+      tags: ["Core: Users"]
+      summary: Create a new user
+      description: |
+        Create a new user account and profile. Registration is proxied to Auth service.
+        Permissions: `create:users`
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string }
+                role: { type: string }
+                first_name: { type: string }
+                last_name: { type: string }
+                third_name: { type: string }
+                phone_number: { type: string }
+                email: { type: string }
+                notes: { type: string }
+      responses:
+        201:
+          description: User created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserCore" }
+
+  /api/users/{id}:
+    get:
+      tags: ["Core: Users"]
+      summary: Get user profile
+      description: |
+        Get user profile by Auth ID.
+        Permissions: `read:users`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: User profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserCore" }
+        404:
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: ["Core: Users"]
+      summary: Update user profile
+      description: |
+        Update user profile details.
+        Permissions: `update:users`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name: { type: string }
+                last_name: { type: string }
+                third_name: { type: string }
+                phone_number: { type: string }
+                email: { type: string }
+                notes: { type: string }
+      responses:
+        200:
+          description: User updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserCore" }
+    delete:
+      tags: ["Core: Users"]
+      summary: Delete user
+      description: |
+        Delete user profile and account (from Core and Auth).
+        Permissions: `delete:users`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: User and account deleted
+
   # --- Ingestor Service ---
   /ingest/camera:
     post:
@@ -1290,6 +1401,21 @@ components:
         role_id: { type: integer }
         role: { $ref: "#/components/schemas/Role" }
         created_at: { type: string, format: date-time }
+
+    UserCore:
+      type: object
+      properties:
+        id: { type: integer }
+        auth_id: { type: integer }
+        first_name: { type: string }
+        last_name: { type: string }
+        third_name: { type: string }
+        phone_number: { type: string }
+        email: { type: string }
+        notes: { type: string }
+        role: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
 
     Role:
       type: object

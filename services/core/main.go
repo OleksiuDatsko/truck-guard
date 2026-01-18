@@ -107,6 +107,15 @@ func main() {
 			permits.GET("/", middleware.RequireCorePermission("read:permits"), handlers.HandleGetPermits)
 			permits.GET("/:id", middleware.RequireCorePermission("read:permits"), handlers.HandleGetPermitByID)
 		}
+	
+		users := api.Group("/users")
+		{
+			users.GET("/", middleware.RequireCorePermission("read:users"), handlers.HandleListUsers)
+			users.GET("/:id", middleware.RequireCorePermission("read:users"), handlers.HandleGetUser)
+			users.POST("/", middleware.RequireCorePermission("create:users"), handlers.HandleCreateUser)
+			users.PUT("/:id", middleware.RequireCorePermission("update:users"), handlers.HandleUpdateUser)
+			users.DELETE("/:id", middleware.RequireCorePermission("delete:users"), handlers.HandleDeleteUser)
+		}
 	}
 
 	repository.DB.FirstOrCreate(&models.SystemSetting{Key: "match_window_seconds", Value: "120"})
