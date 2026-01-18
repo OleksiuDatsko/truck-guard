@@ -1142,6 +1142,10 @@ paths:
         - name: limit
           in: query
           schema: { type: integer, default: 10 }
+        - name: plate
+          in: query
+          description: Filter permits by license plate (exact match on front or back)
+          schema: { type: string }
       responses:
         200:
           description: List of permits

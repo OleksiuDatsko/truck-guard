@@ -88,7 +88,7 @@ type Permit struct {
 	IsClosed            bool       `gorm:"default:false" json:"is_closed"`
 	CurrentStepSequence int        `json:"current_step_sequence"`
 
-	GateEvents []GateEvent `gorm:"foreignKey:PermitID" json:"gate_events,omitempty"`
+	GateEvents []GateEvent `gorm:"foreignKey:PermitID" json:"gate_events"`
 }
 
 type GateEvent struct {

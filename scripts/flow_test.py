@@ -126,7 +126,6 @@ def main():
     print("\n--- 🏁 ЕТАП 3: ВИЇЗД (2 камери) ---")
     send_cam(k['OUT'][0], TRUCK['f'], "EXIT Front")
     send_cam(k['OUT'][1], TRUCK['b'], "EXIT Back")
-    send_cam(k['OUT'][1], TRUCK['b'], "EXIT Back")
 
 
     # Перевірка
@@ -141,7 +140,11 @@ def main():
         p = r['data'][0]
         print(f"   🚚 Фура: {p['plate_front']} / {p['plate_back']}")
         print(f"   ⚖️  Вага: {p['total_weight']} кг")
-        print(f"   📸 Кількість подій (має бути 6): {len(p.get('plate_events', []))}")
+        events_count = 0
+        for ge in p.get('gate_events', []):
+             events_count += len(ge.get('plate_events', []))
+             events_count += len(ge.get('weight_events', []))
+        print(f"   📸 Кількість подій: {events_count}")
         print(f"   🏁 Статус: {'✅ ЗАКРИТО' if p['is_closed'] else '❌ ВІДКРИТО'}")
     else:
         print("❌ Перепустку не знайдено!")
