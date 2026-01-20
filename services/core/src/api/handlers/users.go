@@ -90,6 +90,16 @@ func HandleGetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+func HandleGetUserByAuthID(c *gin.Context) {
+	authID := c.Param("authId")
+	var user models.User
+	if err := repository.DB.Where("auth_id = ?", authID).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User profile not found for this Auth ID"})
+		return
+	}
+	c.JSON(http.StatusOK, user)
+}
+
 func HandleDeleteUser(c *gin.Context) {
 	id := c.Param("id")
 

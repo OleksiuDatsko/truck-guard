@@ -126,6 +126,28 @@ paths:
         200:
           description: Service is healthy
 
+  # --- Core Service Users ---
+  /api/users/by-auth-id/{authId}:
+    get:
+      tags: ["Core: Users"]
+      summary: Get user profile by Auth ID
+      description: |
+        Retrieve Core user profile using the Authentication Service ID.
+        Permissions: `read:users`
+      parameters:
+        - name: authId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: User profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        404:
+          $ref: "#/components/responses/NotFound"
+
   # --- Auth Admin ---
   /auth/admin/users:
     get:
