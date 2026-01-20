@@ -37,6 +37,17 @@ services:
         condition: service_started
       core:
         condition: service_started
+      frontend:
+        condition: service_started
+    restart: always
+
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile
+    environment:
+      - PORT=5173
+      - HOSTNAME=0.0.0.0
     restart: always
 
   auth:

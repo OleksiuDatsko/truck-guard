@@ -23,6 +23,7 @@ services:
       timeout: 5s
       retries: 5
 
+
   gateway:
     image: nginx:stable-alpine
     ports:
@@ -37,7 +38,20 @@ services:
         condition: service_started
       core:
         condition: service_started
+      frontend:
+        condition: service_started
     restart: always
+
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile.dev
+    restart: always
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./services/frontend:/app
+      - /app/node_modules
 
   auth:
     build:

@@ -26,9 +26,12 @@ rebuild: down up-build
 dev-up:
 	docker compose -f docker-compose.dev.yaml up -d
 
+dev-up-build:
+	docker compose -f docker-compose.dev.yaml up -d --build
+
 .PHONY: dev-down
 dev-down:
 	docker compose -f docker-compose.dev.yaml down -v
 
 .PHONY: dev-rebuild
-dev-rebuild: dev-down dev-up
+dev-rebuild: dev-down dev-up-build
