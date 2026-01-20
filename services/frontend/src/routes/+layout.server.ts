@@ -2,7 +2,7 @@ import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals, cookies }) => {
 	let user = locals.user;
-	const token = cookies.get('session');
+	const token = cookies.get('session');	
 
 	if (user && token) {
 		try {
@@ -13,7 +13,7 @@ export const load: LayoutServerLoad = async ({ locals, cookies }) => {
 					...user,
 					...coreUser
 				};
-			}
+			} 
 		} catch (e) {
 			console.error('Failed to fetch core user', e);
 		}
