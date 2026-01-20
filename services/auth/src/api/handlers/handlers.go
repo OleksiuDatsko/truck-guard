@@ -35,11 +35,16 @@ func HandleRegister(c *gin.Context) {
 	repository.DB.Where("name = ?", roleName).First(&role)
 
 	u := models.User{Username: b.User, PasswordHash: string(h), RoleID: role.ID}
-	if err := repository.DB.Create(&u).Error; err != nil {
+	if err := repository.DB.Preload("Role").Preload("Role.Permissions").Create(&u).Error; err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			c.JSON(409, gin.H{"error": "User already exists"})
+			return
+		}
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.Status(201)
+
+	c.JSON(201, u)
 }
 
 func HandleLogin(c *gin.Context) {
@@ -288,7 +293,19 @@ func HandleDeleteKey(c *gin.Context) {
 	var key models.APIKey
 	if err := repository.DB.First(&key, id).Error; err == nil {
 		repository.RDB.Del(context.Background(), "auth:"+key.KeyHash)
-		repository.DB.Delete(&key)
+
+		if err := repository.DB.Model(&key).Association("Permissions").Clear(); err != nil {
+			c.JSON(500, gin.H{"error": "Failed to clear permissions: " + err.Error()})
+			return
+		}
+
+		if err := repository.DB.Delete(&key).Error; err != nil {
+			c.JSON(500, gin.H{"error": "Failed to delete key: " + err.Error()})
+			return
+		}
+	} else {
+		c.JSON(404, gin.H{"error": "Key not found"})
+		return
 	}
 	c.Status(204)
 }

@@ -23,6 +23,7 @@ class EventProcessor:
         source_id = data.get("source_id")
 
         config = self._get_cached_config(source_id)
+        logger.info(f"Config for scale {source_id}: {config}")
         if not config:
             logger.error(f"Config not found for scale {source_id}")
             return
@@ -37,14 +38,15 @@ class EventProcessor:
 
         if weight is not None:
             final_event = {
-                "scale_id": source_id,
+                "scale_source_id": source_id,
+                "scale_id": f"{config.get("ID")}",
                 "weight": weight,
                 "timestamp": data.get("at"),
                 "raw_payload": data.get("payload"),
             }
             try:
                 self.core.send_weight_event(final_event)
-                logger.info(f"Processed weight for {source_id}: {weight} kg")
+                logger.info(f"Processed weight for {source_id}: {weight} kg {final_event}")
             except Exception as e:
                 logger.error(f"Failed to send weight event to Core: {e}")
                 raise e

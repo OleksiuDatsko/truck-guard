@@ -1,1 +1,4 @@
 .env
+tmp/
+__pycache__/
+redis-ui-settings/.p3xrs-conns.json

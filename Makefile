@@ -21,3 +21,14 @@ logs:
 
 .PHONY: rebuild
 rebuild: down up-build
+
+.PHONY: dev-up
+dev-up:
+	docker compose -f docker-compose.dev.yaml up -d
+
+.PHONY: dev-down
+dev-down:
+	docker compose -f docker-compose.dev.yaml down -v
+
+.PHONY: dev-rebuild
+dev-rebuild: dev-down dev-up

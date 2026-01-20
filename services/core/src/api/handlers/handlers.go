@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,7 @@ func HandlePlateEvent(c *gin.Context) {
 	var event models.RawPlateEvent
 
 	if err := c.ShouldBindBodyWith(&event, binding.JSON); err != nil {
+		log.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -115,6 +117,7 @@ func HandleWeightEvent(c *gin.Context) {
 	var event models.RawWeightEvent
 
 	if err := c.ShouldBindBodyWith(&event, binding.JSON); err != nil {
+		log.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -176,6 +179,33 @@ func HandleGetSystemEventByID(c *gin.Context) {
 	var event models.SystemEvent
 	if err := repository.DB.First(&event, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "System event not found"})
+		return
+	}
+	c.JSON(http.StatusOK, event)
+}
+
+func HandleGetGateEvents(c *gin.Context) {
+	var events []models.GateEvent
+	var total int64
+	limit, offset, page := utils.GetPagination(c)
+
+	repository.DB.Model(&models.GateEvent{}).Count(&total)
+
+	if err := repository.DB.Limit(limit).Offset(offset).Order("created_at desc").
+		Preload("Gate").
+		Preload("WeightEvents").Preload("PlateEvents").
+		Find(&events).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch gate events"})
+		return
+	}
+	utils.SendPaginatedResponse(c, events, total, page, limit)
+}
+
+func HandleGetGateEventByID(c *gin.Context) {
+	id := c.Param("id")
+	var event models.GateEvent
+	if err := repository.DB.Preload("Gate").Preload("WeightEvents").Preload("PlateEvents").First(&event, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Gate event not found"})
 		return
 	}
 	c.JSON(http.StatusOK, event)

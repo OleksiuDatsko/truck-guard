@@ -1,0 +1,158 @@
+package handlers
+
+import (
+	"net/http"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/truckguard/core/src/api/clients"
+	"github.com/truckguard/core/src/models"
+	"github.com/truckguard/core/src/repository"
+)
+
+func HandleCreateUser(c *gin.Context) {
+	var input struct {
+		Username    string `json:"username" binding:"required"`
+		Password    string `json:"password" binding:"required"`
+		Role        string `json:"role"`
+		FirstName   string `json:"first_name"`
+		LastName    string `json:"last_name"`
+		ThirdName   string `json:"third_name"`
+		PhoneNumber string `json:"phone_number"`
+		Email       string `json:"email"`
+		Notes       string `json:"notes"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	authClient := clients.NewAuthClient()
+	if authClient == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Auth client not configured"})
+		return
+	}
+
+	authResp, err := authClient.RegisterUser(
+		c.Request.Context(),
+		input.Username,
+		input.Password,
+		input.Role,
+		c.GetHeader("Authorization"),
+		c.GetHeader("X-Api-Key"),
+	)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "status: 409") {
+			c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
+			return
+		}
+		c.JSON(http.StatusBadGateway, gin.H{"error": "Auth service registration failed: " + err.Error()})
+		return
+	}
+
+	user := models.User{
+		AuthID:      authResp.ID,
+		FirstName:   input.FirstName,
+		LastName:    input.LastName,
+		ThirdName:   input.ThirdName,
+		PhoneNumber: input.PhoneNumber,
+		Email:       input.Email,
+		Notes:       input.Notes,
+		Role:        input.Role,
+	}
+
+	if err := repository.DB.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create profile in Core"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, user)
+}
+
+func HandleListUsers(c *gin.Context) {
+	var users []models.User
+	if err := repository.DB.Find(&users).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+		return
+	}
+	c.JSON(http.StatusOK, users)
+}
+
+func HandleGetUser(c *gin.Context) {
+	id := c.Param("id")
+	var user models.User
+	if err := repository.DB.Where("ID = ?", id).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User profile not found"})
+		return
+	}
+	c.JSON(http.StatusOK, user)
+}
+
+func HandleDeleteUser(c *gin.Context) {
+	id := c.Param("id")
+
+	var user models.User
+	if err := repository.DB.Where("ID = ?", id).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User profile not found"})
+		return
+	}
+	authClient := clients.NewAuthClient()
+	if authClient != nil {
+		err := authClient.DeleteUser(
+			c.Request.Context(),
+			user.AuthID,
+			c.GetHeader("Authorization"),
+			c.GetHeader("X-Api-Key"),
+		)
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to delete user from Auth service"})
+			return
+		}
+	}
+
+	if err := repository.DB.Where("auth_id = ?", id).Delete(&models.User{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete profile from Core"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "deleted from both services"})
+}
+
+func HandleUpdateUser(c *gin.Context) {
+	id := c.Param("id")
+	var input struct {
+		FirstName   string `json:"first_name"`
+		LastName    string `json:"last_name"`
+		ThirdName   string `json:"third_name"`
+		PhoneNumber string `json:"phone_number"`
+		Email       string `json:"email"`
+		Notes       string `json:"notes"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user models.User
+	if err := repository.DB.Where("auth_id = ?", id).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User profile not found"})
+		return
+	}
+
+	user.FirstName = input.FirstName
+	user.LastName = input.LastName
+	user.ThirdName = input.ThirdName
+	user.PhoneNumber = input.PhoneNumber
+	user.Email = input.Email
+	user.Notes = input.Notes
+
+	if err := repository.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile in Core"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
