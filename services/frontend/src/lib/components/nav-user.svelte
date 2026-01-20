@@ -4,10 +4,13 @@
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import { useSidebar } from "$lib/components/ui/sidebar/index.js";
   import BadgeCheckIcon from "@lucide/svelte/icons/badge-check";
-  import BellIcon from "@lucide/svelte/icons/bell";
   import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
+  import SunIcon from "@lucide/svelte/icons/sun";
   import LogOutIcon from "@lucide/svelte/icons/log-out";
   import type { CoreUser as User } from "$lib/server/core-client";
+  import { toggleMode } from "mode-watcher";
+  import { MoonIcon } from "@lucide/svelte";
+
 
   let { user }: { user: User } = $props();
   const sidebar = useSidebar();
@@ -90,6 +93,15 @@
           <DropdownMenu.Item>
             <BadgeCheckIcon />
             Профіль
+          </DropdownMenu.Item>
+          <DropdownMenu.Item onclick={toggleMode}>
+            <SunIcon
+              class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 !transition-all dark:scale-0 dark:-rotate-90"
+            />
+            <MoonIcon
+              class="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 !transition-all dark:scale-100 dark:rotate-0"
+            />
+            Тема
           </DropdownMenu.Item>
         </DropdownMenu.Group>
         <DropdownMenu.Separator />

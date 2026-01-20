@@ -33,6 +33,7 @@
 	},
 	"dependencies": {
 		"@sveltejs/adapter-node": "^5.5.1",
-		"jwt-decode": "^4.0.0"
+		"jwt-decode": "^4.0.0",
+		"mode-watcher": "^1.1.0"
 	}
 }

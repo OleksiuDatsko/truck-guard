@@ -4,6 +4,7 @@
   import AppSidebar from "$lib/components/app-sidebar.svelte";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import { Separator } from "$lib/components/ui/separator/index.js";
+  import { ModeWatcher } from "mode-watcher";
 
   let { children, data } = $props();
   $inspect(data);
@@ -13,10 +14,11 @@
   <link rel="icon" href={favicon} />
   <title>TruckGuard</title>
 </svelte:head>
+<ModeWatcher defaultMode="light" />
 
 {#if data.user}
   <Sidebar.Provider>
-    <AppSidebar user={data.user}/>
+    <AppSidebar user={data.user} />
     <Sidebar.Inset>
       <header class="flex h-16 shrink-0 items-center gap-2 border-b px-4">
         <Sidebar.Trigger class="-ms-1" />
