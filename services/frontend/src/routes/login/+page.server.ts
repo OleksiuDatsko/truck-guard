@@ -1,9 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
-import { authClient } from '$lib/server/auth-client';
 
 export const actions: Actions = {
-    default: async ({ request, cookies }) => {
+    default: async ({ request, cookies, locals }) => {
         const data = await request.formData();
         const username = data.get('username') as string;
         const password = data.get('password') as string;
@@ -12,7 +11,7 @@ export const actions: Actions = {
             return fail(400, { message: 'Username and password are required' });
         }
 
-        const result = await authClient.login(username, password);
+        const result = await locals.authClient.login(username, password);
 
         if (!result) {
             console.error('AuthClient.login failed', {result, username, password});
@@ -25,6 +24,7 @@ export const actions: Actions = {
             sameSite: 'strict',
             maxAge: 60 * 60 * 24
         });
+        console.log('Login successful', {result, username, password});
 
         throw redirect(303, '/');
     }

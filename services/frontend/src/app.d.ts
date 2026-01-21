@@ -1,4 +1,5 @@
 import type { CoreClient, User } from "./server/core-client";
+import type { AuthClient } from "./server/auth-client";
 
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
@@ -11,6 +12,7 @@ declare global {
 				username: string;
 				permissions: string[];
             } & User | null;
+			authClient: AuthClient;
 			coreClient: CoreClient;
 		}
 		// interface PageData {}

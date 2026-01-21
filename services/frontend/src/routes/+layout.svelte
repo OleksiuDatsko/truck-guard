@@ -5,6 +5,7 @@
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import { Separator } from "$lib/components/ui/separator/index.js";
   import { ModeWatcher } from "mode-watcher";
+  import { Toaster } from "$lib/components/ui/sonner";
 
   let { children, data } = $props();
   $inspect(data);
@@ -15,6 +16,7 @@
   <title>TruckGuard</title>
 </svelte:head>
 <ModeWatcher defaultMode="light" />
+<Toaster />
 
 {#if data.user}
   <Sidebar.Provider>

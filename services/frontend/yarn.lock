@@ -1033,6 +1033,13 @@ runed@^0.25.0:
   dependencies:
     esm-env "^1.0.0"
 
+runed@^0.28.0:
+  version "0.28.0"
+  resolved "https://registry.yarnpkg.com/runed/-/runed-0.28.0.tgz#68e2ec076ae921f5e7ca0ebaa37e9f6598775c3c"
+  integrity sha512-k2xx7RuO9hWcdd9f+8JoBeqWtYrm5CALfgpkg2YDB80ds/QE4w0qqu34A7fqiAwiBBSBQOid7TLxwxVC27ymWQ==
+  dependencies:
+    esm-env "^1.0.0"
+
 runed@^0.35.1:
   version "0.35.1"
   resolved "https://registry.yarnpkg.com/runed/-/runed-0.35.1.tgz#e7e424aaa18d4e585a9e7b2d948c2b0860858c74"
@@ -1090,6 +1097,13 @@ svelte-check@^4.3.4:
     fdir "^6.2.0"
     picocolors "^1.0.0"
     sade "^1.7.4"
+
+svelte-sonner@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/svelte-sonner/-/svelte-sonner-1.0.7.tgz#7b8a9b99d60e28fd8e2826e42acc29089f2dc0f7"
+  integrity sha512-1EUFYmd7q/xfs2qCHwJzGPh9n5VJ3X6QjBN10fof2vxgy8fYE7kVfZ7uGnd7i6fQaWIr5KvXcwYXE/cmTEjk5A==
+  dependencies:
+    runed "^0.28.0"
 
 svelte-toolbelt@^0.10.6:
   version "0.10.6"

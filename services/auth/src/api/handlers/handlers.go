@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -85,6 +86,7 @@ func HandleValidate(c *gin.Context) {
 	}
 
 	a := c.GetHeader("Authorization")
+	log.Println(a)
 	if strings.HasPrefix(a, "Bearer ") {
 		ts := strings.TrimPrefix(a, "Bearer ")
 		token, err := jwt.Parse(ts, func(t *jwt.Token) (interface{}, error) { return repository.JWTSecret, nil })
@@ -153,6 +155,13 @@ func HandleAssignPermissionsToRole(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
+
+	var userIDs []uint
+	repository.DB.Model(&models.User{}).Where("role_id = ?", role.ID).Pluck("id", &userIDs)
+	for _, id := range userIDs {
+		repository.InvalidateUserCache(id)
+	}
+
 
 	c.JSON(200, gin.H{"message": "Permissions updated for role " + role.Name})
 }

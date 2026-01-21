@@ -1,24 +1,32 @@
 import type { Handle } from '@sveltejs/kit';
-import { authClient } from '$lib/server/auth-client';
+import { AuthClient } from '$lib/server/auth-client';
 import { redirect } from '@sveltejs/kit';
 import { CoreClient } from '$lib/server/core-client';
 
 export const handle: Handle = async ({ event, resolve }) => {
     const session = event.cookies.get('session');
 
+    // Init auth client with session (or undefined)
+    
     // Default to null user
     event.locals.user = null;
-
+    
     if (session) {
         // Validate token with Auth Service
-        const user = await authClient.validate(session);
+        event.locals.authClient = new AuthClient(session);
+        const user = await event.locals.authClient.validate();
+        console.log('User:', user)
+        console.log('Session:', session)
         if (user) {
             event.locals.user = user;
             event.locals.coreClient = new CoreClient(session)
         } else {
             // Invalid session, clear cookie
+            console.log('Invalid session, clearing cookie');
             event.cookies.delete('session', { path: '/' });
         }
+    } else {
+        event.locals.authClient = new AuthClient();
     }
 
     // Protected routes logic

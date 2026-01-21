@@ -7,14 +7,28 @@ export interface UserProfile {
     permissions: string[];
 }
 
+
+export interface Permission {
+    id: string; // The slug, e.g. "read:users"
+    name: string;
+    description: string;
+    module: string;
+}
+
+export interface Role {
+    id: number;
+    name: string;
+    description: string;
+    permissions?: Permission[];
+}
+
 export class AuthClient {
     private baseUrl: string;
-    private cache: Map<string, { user: UserProfile, expiresAt: number }>;
-    private cacheDuration = 60 * 1000;
+    private token?: string;
 
-    constructor(baseUrl: string = 'http://gateway/auth') {
+    constructor(token?: string | null, baseUrl: string = 'http://gateway/auth') {
         this.baseUrl = baseUrl;
-        this.cache = new Map();
+        this.token = token || undefined;
     }
 
     async login(username: string, password: string): Promise<{ token: string } | null> {
@@ -36,32 +50,27 @@ export class AuthClient {
         }
     }
 
-    async validate(token: string): Promise<UserProfile | null> {
+    async validate(): Promise<UserProfile | null> {
+        if (!this.token) {
+            return null;
+        }
         try {
-            const now = Date.now();
-            const cached = this.cache.get(token);
-
-            if (cached && cached.expiresAt > now) {
-                return cached.user;
-            }
-
             const response = await fetch(`${this.baseUrl}/validate`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
                 }
             });
-
+            console.log(response)
             if (!response.ok) {
-                this.cache.delete(token);
                 return null;
             }
 
             const permissionsHeader = response.headers.get('X-Permissions');
             const permissions = permissionsHeader ? permissionsHeader.split(',') : [];
 
-            // Decode token to get basic info
-            const decoded: any = jwtDecode(token);
+            const decoded: any = jwtDecode(this.token);
             
             const user = {
                 id: decoded.sub || decoded.user_id || '0',
@@ -70,17 +79,81 @@ export class AuthClient {
                 permissions: permissions
             };
 
-            this.cache.set(token, {
-                user,
-                expiresAt: now + this.cacheDuration
-            });
-
             return user;
         } catch (error) {
             console.error('AuthClient.validate error:', error);
             return null;
         }
     }
+
+
+    // --- Role Management ---
+
+    async getRoles(): Promise<Role[]> {
+        return this.fetchWithAuth<Role[]>('/admin/roles');
+    }
+
+    async createRole(name: string, description: string): Promise<boolean> {
+        return this.fetchWithAuth<boolean>('/admin/roles', 'POST', { name, description });
+    }
+
+    async updateRole(id: number, name: string, description: string): Promise<boolean> {
+        return this.fetchWithAuth<boolean>(`/admin/roles/${id}`, 'PUT', { name, description });
+    }
+
+    async deleteRole(id: number): Promise<boolean> {
+        return this.fetchWithAuth<boolean>(`/admin/roles/${id}`, 'DELETE');
+    }
+
+    // --- Permissions ---
+
+    async getPermissions(): Promise<Permission[]> {
+        return this.fetchWithAuth<Permission[]>('/admin/permissions');
+    }
+
+    async assignPermissions(roleId: number, permissions: string[]): Promise<boolean> {
+        return this.fetchWithAuth<boolean>(`/admin/roles/${roleId}/permissions`, 'POST', { permission_ids: permissions });
+    }
+
+    // Helper for authenticated requests
+    private async fetchWithAuth<T>(endpoint: string, method: string = 'GET', body?: any): Promise<T> {
+        if (!this.token) {
+            throw new Error('AuthClient: No token provided');
+        }
+        try {
+            const options: RequestInit = {
+                method,
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                }
+            };
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            const response = await fetch(`${this.baseUrl}${endpoint}`, options);
+
+            if (!response.ok) {
+                throw new Error(`Request failed: ${response.status}`);
+            }
+
+            // For 204 No Content
+            if (response.status === 204) {
+               return true as T;
+            }
+
+            // Check if response has body
+            const text = await response.text();
+            if (!text) return true as T; 
+            
+            return JSON.parse(text);
+        } catch (error) {
+            console.error(`AuthClient request to ${endpoint} failed:`, error);
+            throw error;
+        }
+    }
 }
 
 export const authClient = new AuthClient();
+
