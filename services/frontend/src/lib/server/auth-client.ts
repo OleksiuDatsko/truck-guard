@@ -22,6 +22,14 @@ export interface Role {
     permissions?: Permission[];
 }
 
+export interface APIKey {
+    id: number;
+    owner_name: string;
+    is_active: boolean;
+    permissions?: Permission[];
+    created_at: string;
+}
+
 export class AuthClient {
     private baseUrl: string;
     private token?: string;
@@ -113,6 +121,28 @@ export class AuthClient {
 
     async assignPermissions(roleId: number, permissions: string[]): Promise<boolean> {
         return this.fetchWithAuth<boolean>(`/admin/roles/${roleId}/permissions`, 'POST', { permission_ids: permissions });
+    }
+
+    // --- API Keys ---
+
+    async getKeys(): Promise<APIKey[]> {
+        return this.fetchWithAuth<APIKey[]>('/admin/keys');
+    }
+
+    async createKey(name: string, permissionIds: string[]): Promise<{ api_key: string, id: number }> {
+        return this.fetchWithAuth<{ api_key: string, id: number }>('/admin/keys', 'POST', { name, permission_ids: permissionIds });
+    }
+
+    async updateKey(id: number, ownerName: string, isActive: boolean): Promise<APIKey> {
+        return this.fetchWithAuth<APIKey>(`/admin/keys/${id}`, 'PUT', { owner_name: ownerName, is_active: isActive });
+    }
+
+    async deleteKey(id: number): Promise<boolean> {
+        return this.fetchWithAuth<boolean>(`/admin/keys/${id}`, 'DELETE');
+    }
+
+    async assignKeyPermissions(id: number, permissionIds: string[]): Promise<boolean> {
+        return this.fetchWithAuth<boolean>(`/admin/keys/${id}/permissions`, 'PUT', { permission_ids: permissionIds });
     }
 
     // Helper for authenticated requests
