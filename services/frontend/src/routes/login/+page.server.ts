@@ -24,7 +24,6 @@ export const actions: Actions = {
             sameSite: 'strict',
             maxAge: 60 * 60 * 24
         });
-        console.log('Login successful', {result, username, password});
 
         throw redirect(303, '/');
     }

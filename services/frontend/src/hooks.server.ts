@@ -15,13 +15,10 @@ export const handle: Handle = async ({ event, resolve }) => {
         // Validate token with Auth Service
         event.locals.authClient = new AuthClient(session);
         const user = await event.locals.authClient.validate();
-        console.log('User:', user)
-        console.log('Session:', session)
         if (user) {
             event.locals.user = user;
             event.locals.coreClient = new CoreClient(session)
         } else {
-            // Invalid session, clear cookie
             console.log('Invalid session, clearing cookie');
             event.cookies.delete('session', { path: '/' });
         }

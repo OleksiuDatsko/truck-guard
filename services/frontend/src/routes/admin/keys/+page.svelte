@@ -105,7 +105,6 @@
     <Table.Root>
       <Table.Header>
         <Table.Row>
-          <Table.Head>ID</Table.Head>
           <Table.Head>Назва (Власник)</Table.Head>
           <Table.Head>Статус</Table.Head>
           <Table.Head>Створено</Table.Head>
@@ -115,7 +114,6 @@
       <Table.Body>
         {#each data.keys as key (key.id)}
           <Table.Row>
-            <Table.Cell>{key.id}</Table.Cell>
             <Table.Cell class="font-medium">{key.owner_name}</Table.Cell>
             <Table.Cell>
               {#if key.is_active}

@@ -7,7 +7,6 @@ export const load: LayoutServerLoad = async ({ locals, cookies }) => {
 	if (user && token) {
 		try {
 			const coreUser = await locals.coreClient.getUser(user.id);
-			console.log({coreUser});
 			if (coreUser) {
 				user = {
 					...user,

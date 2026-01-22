@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -68,6 +69,10 @@ func HandleLogin(c *gin.Context) {
 		c.Status(401)
 		return
 	}
+
+	now := time.Now()
+	u.LastLogin = &now
+	repository.DB.Save(&u)
 
 	t, _ := repository.GenerateToken(u)
 	c.JSON(200, gin.H{"token": t})
@@ -161,7 +166,6 @@ func HandleAssignPermissionsToRole(c *gin.Context) {
 	for _, id := range userIDs {
 		repository.InvalidateUserCache(id)
 	}
-
 
 	c.JSON(200, gin.H{"message": "Permissions updated for role " + role.Name})
 }

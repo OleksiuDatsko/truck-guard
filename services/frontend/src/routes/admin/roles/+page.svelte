@@ -13,9 +13,9 @@
   import Shield from "@lucide/svelte/icons/shield";
   import Plus from "@lucide/svelte/icons/plus";
   import { toast } from "svelte-sonner";
+  import { can } from "$lib/auth";
 
   let { data }: { data: PageData } = $props();
-  $inspect(data);
 
   let isCreateOpen = $state(false);
   let isEditOpen = $state(false);
@@ -51,7 +51,6 @@
 
   function openPerms(role: Role) {
     currentRole = role;
-    // Populate selected permissions from the role object if available
     if (role.permissions) {
       selectedPermissions = role.permissions.map((p) => p.id);
     } else {
@@ -68,10 +67,6 @@
       selectedPermissions = [...selectedPermissions, id];
     }
   }
-
-  function can(permission: string): boolean {
-    return data.user?.permissions?.includes(permission) ?? false;
-  }
 </script>
 
 <div class="p-6 space-y-6">
@@ -82,7 +77,7 @@
         Керування ролями користувачів та їх доступом.
       </p>
     </div>
-    {#if can("create:roles")}
+    {#if can(data.user,"create:roles")}
       <Button onclick={openCreate}>
         <Plus class="mr-2 h-4 w-4" />
         Створити роль
@@ -94,7 +89,6 @@
     <Table.Root>
       <Table.Header>
         <Table.Row>
-          <Table.Head>ID</Table.Head>
           <Table.Head>Назва</Table.Head>
           <Table.Head>Опис</Table.Head>
           <Table.Head class="text-right">Дії</Table.Head>
@@ -103,11 +97,10 @@
       <Table.Body>
         {#each data.roles as role (role.id)}
           <Table.Row>
-            <Table.Cell>{role.id}</Table.Cell>
             <Table.Cell class="font-medium">{role.name}</Table.Cell>
             <Table.Cell>{role.description}</Table.Cell>
             <Table.Cell class="text-right space-x-2">
-              {#if can("update:roles")}
+              {#if can(data.user,"update:roles")}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -125,7 +118,7 @@
                   <Pencil class="h-4 w-4" />
                 </Button>
               {/if}
-              {#if can("delete:roles")}
+              {#if can(data.user,"delete:roles")}
                 <Button
                   variant="ghost"
                   size="icon"

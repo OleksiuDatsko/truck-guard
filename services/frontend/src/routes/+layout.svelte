@@ -8,7 +8,6 @@
   import { Toaster } from "$lib/components/ui/sonner";
 
   let { children, data } = $props();
-  $inspect(data);
 </script>
 
 <svelte:head>
@@ -22,12 +21,12 @@
   <Sidebar.Provider>
     <AppSidebar user={data.user} />
     <Sidebar.Inset>
-      <header class="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+      <header class="flex h-14 shrink-0 items-center gap-2 border-b px-4">
         <Sidebar.Trigger class="-ms-1" />
         <Separator orientation="vertical" class="me-2 h-4" />
       </header>
-      <div class="flex flex-1 flex-col gap-4 p-4">
-        {@render children()}
+      <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
+      {@render children()}
       </div>
     </Sidebar.Inset>
   </Sidebar.Provider>

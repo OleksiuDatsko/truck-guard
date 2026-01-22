@@ -5,6 +5,7 @@ export interface UserProfile {
     username: string;
     role: string;
     permissions: string[];
+    last_login?: string;
 }
 
 
@@ -70,7 +71,6 @@ export class AuthClient {
                     'Content-Type': 'application/json'
                 }
             });
-            console.log(response)
             if (!response.ok) {
                 return null;
             }
@@ -145,6 +145,16 @@ export class AuthClient {
         return this.fetchWithAuth<boolean>(`/admin/keys/${id}/permissions`, 'PUT', { permission_ids: permissionIds });
     }
 
+    // --- User Management ---
+
+    async listUsers(): Promise<UserProfile[]> {
+        return this.fetchWithAuth<UserProfile[]>('/admin/users');
+    }
+
+    async updateUserRole(id: string, roleId: number): Promise<boolean> {
+        return this.fetchWithAuth<boolean>(`/admin/users/${id}/role`, 'PUT', { role_id: roleId });
+    }
+
     // Helper for authenticated requests
     private async fetchWithAuth<T>(endpoint: string, method: string = 'GET', body?: any): Promise<T> {
         if (!this.token) {
@@ -184,6 +194,4 @@ export class AuthClient {
         }
     }
 }
-
-export const authClient = new AuthClient();
 

@@ -104,7 +104,7 @@ func HandleDeleteUser(c *gin.Context) {
 	id := c.Param("id")
 
 	var user models.User
-	if err := repository.DB.Where("ID = ?", id).First(&user).Error; err != nil {
+	if err := repository.DB.Where("auth_id = ?", id).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User profile not found"})
 		return
 	}
