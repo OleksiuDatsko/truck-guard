@@ -13,6 +13,7 @@
   import { goto } from "$app/navigation";
 
   let { user }: { user: User } = $props();
+  $inspect(user);
   const sidebar = useSidebar();
   let logoutForm: HTMLFormElement;
 </script>
@@ -40,18 +41,29 @@
                   {user.first_name.substring(0, 1).toUpperCase()}{user.last_name
                     .substring(0, 1)
                     .toUpperCase()}
+                {:else if user.first_name}
+                  {user.first_name.substring(0, 1).toUpperCase()}
+                {:else if user.last_name}
+                  {user.last_name.substring(0, 1).toUpperCase()}
                 {:else}
-                  AD
+                  NP
                 {/if}
               </Avatar.Fallback>
             </Avatar.Root>
             <div class="grid flex-1 text-start text-sm leading-tight">
               <span class="font-medium"
-                >{#if user.first_name && user.last_name}{user.first_name}
-                  {user.last_name}{:else}Admin{/if}</span
+                >{#if user.first_name && user.last_name}
+                {`${user.first_name} ${user.last_name}`}
+                {:else if user.first_name}
+                {user.first_name}
+                {:else if user.last_name}
+                {user.last_name}
+                {:else}
+                No Profile
+                {/if}</span
               >
               <span class="text-xs"
-                >{#if user.email}{user.email}{:else}admin@admin.com{/if}</span
+                >{#if user.email}{user.email}{/if}</span
               >
             </div>
             <ChevronsUpDownIcon class="ms-auto size-4" />
@@ -72,18 +84,21 @@
                   {user.first_name.substring(0, 1).toUpperCase()}{user.last_name
                     .substring(0, 1)
                     .toUpperCase()}
+                {:else if user.first_name}
+                  {user.first_name.substring(0, 1).toUpperCase()}
+                {:else if user.last_name}
+                  {user.last_name.substring(0, 1).toUpperCase()}
                 {:else}
-                  AD
+                  NP
                 {/if}
               </Avatar.Fallback>
             </Avatar.Root>
             <div class="grid flex-1 text-start text-sm leading-tight">
               <span class="truncate font-medium"
-                >{#if user.first_name && user.last_name}{user.first_name}
-                  {user.last_name}{:else}Admin{/if}</span
+                >{#if user.first_name && user.last_name}{`${user.first_name} ${user.last_name}`}{:else if user.first_name}{user.first_name}{:else if user.last_name}{user.last_name}{:else}No Profile{/if}</span
               >
               <span class="truncate text-xs"
-                >{#if user.email}{user.email}{:else}admin{/if}</span
+                >{#if user.email}{user.email}{/if}</span
               >
             </div>
           </div>

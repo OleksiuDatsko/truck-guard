@@ -5,7 +5,7 @@
   import { Textarea } from "$lib/components/ui/textarea";
   import { enhance } from "$app/forms";
   import { toast } from "svelte-sonner";
-  import { User, Mail, Phone, FileText, Lock } from "@lucide/svelte";
+  import { User, Mail, Phone, FileText } from "@lucide/svelte";
 
   let { data } = $props();
 
@@ -45,7 +45,7 @@
         return async ({ result, update }) => {
           if (result.type === "success") {
             toast.success("Профіль оновлено успішно");
-            await update();
+            await update({ reset: false });
           } else {
             toast.error("Не вдалося оновити профіль");
           }
