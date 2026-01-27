@@ -42,6 +42,14 @@ export class CoreClient {
         return this.fetchWithAuth<boolean>(`/users/${authId}`, 'DELETE');
     }
 
+    async getMyProfile(): Promise<CoreUser | null> {
+        return this.fetchWithAuth<CoreUser>('/users/me');
+    }
+
+    async updateMyProfile(data: Partial<CoreUser>): Promise<CoreUser | null> {
+        return this.fetchWithAuth<CoreUser>('/users/me', 'PUT', data);
+    }
+
     private async fetchWithAuth<T>(endpoint: string, method: string = 'GET', body?: any): Promise<T> {
         if (!this.token) {
             throw new Error('CoreClient: No token provided');

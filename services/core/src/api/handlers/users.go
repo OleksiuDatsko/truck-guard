@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -102,7 +103,7 @@ func HandleGetUserByAuthID(c *gin.Context) {
 
 func HandleDeleteUser(c *gin.Context) {
 	id := c.Param("id")
-
+	fmt.Println(id)
 	var user models.User
 	if err := repository.DB.Where("auth_id = ?", id).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User profile not found"})
@@ -162,6 +163,82 @@ func HandleUpdateUser(c *gin.Context) {
 	if err := repository.DB.Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile in Core"})
 		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+func HandleGetMyProfile(c *gin.Context) {
+	authID := c.GetHeader("X-User-ID")
+	if authID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var user models.User
+	if err := repository.DB.Where("auth_id = ?", authID).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Profile not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+func HandleUpdateMyProfile(c *gin.Context) {
+	authIDStr := c.GetHeader("X-User-ID")
+	if authIDStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var authID uint64
+	var err error
+	if _, err = fmt.Sscanf(authIDStr, "%d", &authID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid User ID format"})
+		return
+	}
+	realAuthID := uint(authID)
+
+	var input struct {
+		FirstName   string `json:"first_name"`
+		LastName    string `json:"last_name"`
+		ThirdName   string `json:"third_name"`
+		PhoneNumber string `json:"phone_number"`
+		Email       string `json:"email"`
+		Notes       string `json:"notes"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user models.User
+	result := repository.DB.Where("auth_id = ?", realAuthID).First(&user)
+
+	if result.Error != nil {
+		user = models.User{
+			AuthID: realAuthID,
+		}
+	}
+
+	user.FirstName = input.FirstName
+	user.LastName = input.LastName
+	user.ThirdName = input.ThirdName
+	user.PhoneNumber = input.PhoneNumber
+	user.Email = input.Email
+	user.Notes = input.Notes
+
+	if result.Error != nil {
+		if err := repository.DB.Create(&user).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create profile"})
+			return
+		}
+	} else {
+		if err := repository.DB.Save(&user).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, user)

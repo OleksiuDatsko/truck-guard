@@ -6,10 +6,8 @@
   import { enhance } from "$app/forms";
   import { toast } from "svelte-sonner";
 
-  export let data;
-  export let form;
-
-  $: user = data.user;
+  let { data, form } = $props();
+  let { user } = $derived(data);
 </script>
 
 <div class="p-6 space-y-6">

@@ -111,11 +111,13 @@ func main() {
 		users := api.Group("/users")
 		{
 			users.GET("/", middleware.RequireCorePermission("read:users"), handlers.HandleListUsers)
+			users.GET("/me", handlers.HandleGetMyProfile)
+			users.PUT("/me", handlers.HandleUpdateMyProfile)
 			users.GET("/:id", middleware.RequireCorePermission("read:users"), handlers.HandleGetUser)
+			users.DELETE("/:id", middleware.RequireCorePermission("delete:users"), handlers.HandleDeleteUser)
 			users.GET("/by-auth-id/:authId", handlers.HandleGetUserByAuthID)
 			users.POST("/", middleware.RequireCorePermission("create:users"), handlers.HandleCreateUser)
 			users.PUT("/:id", middleware.RequireCorePermission("update:users"), handlers.HandleUpdateUser)
-			users.DELETE("/:id", middleware.RequireCorePermission("delete:users"), handlers.HandleDeleteUser)
 		}
 	}
 

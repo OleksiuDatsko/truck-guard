@@ -10,7 +10,7 @@
   import type { CoreUser as User } from "$lib/server/core-client";
   import { toggleMode } from "mode-watcher";
   import { MoonIcon } from "@lucide/svelte";
-
+  import { goto } from "$app/navigation";
 
   let { user }: { user: User } = $props();
   const sidebar = useSidebar();
@@ -90,7 +90,7 @@
         </DropdownMenu.Label>
         <DropdownMenu.Separator />
         <DropdownMenu.Group>
-          <DropdownMenu.Item>
+          <DropdownMenu.Item onclick={() => goto('/profile')}>
             <BadgeCheckIcon />
             Профіль
           </DropdownMenu.Item>
