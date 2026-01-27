@@ -9,7 +9,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     const coreUsers = await locals.coreClient.listUsers();
     if (!coreUsers) {
-         console.error("Failed to fetch core users");
+         console.error("Failed to fetch Core users");
     }
 
     const users = authUsers.map((authUser: any) => {

@@ -7,7 +7,7 @@ export interface CoreUser {
     phone: string;
     email: string;
     notes: string;
-    role: string;
+    role: string | { id: number; name: string; description: string };
 }
 
 export class CoreClient {

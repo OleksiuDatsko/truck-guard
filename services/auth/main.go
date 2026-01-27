@@ -23,10 +23,10 @@ func main() {
 	r.POST("/register", middleware.RequirePermission("create:users"), handlers.HandleRegister)
 
 	admin := r.Group("/admin")
-	admin.Use(middleware.RequirePermission("manage:settings"))
 	{
 		// Користувачі
 		admin.GET("/users", middleware.RequirePermission("read:users"), handlers.HandleListUsers)
+		admin.GET("/users/:id", middleware.RequirePermission("read:users"), handlers.HandleGetUser)
 		admin.PUT("/users/:id/role", middleware.RequirePermission("update:users"), handlers.HandleUpdateUserRole)
 		admin.DELETE("/users/:id", middleware.RequirePermission("delete:users"), handlers.HandleDeleteUser)
 

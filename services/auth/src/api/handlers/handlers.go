@@ -341,6 +341,16 @@ func HandleDeleteUser(c *gin.Context) {
 	c.JSON(404, gin.H{"error": "User not found"})
 }
 
+func HandleGetUser(c *gin.Context) {
+	id := c.Param("id")
+	var user models.User
+	if err := repository.DB.Preload("Role").First(&user, id).Error; err == nil {
+		c.JSON(200, user)
+		return
+	}
+	c.JSON(404, gin.H{"error": "User not found"})
+}
+
 func HandleListRoles(c *gin.Context) {
 	var roles []models.Role
 	repository.DB.Preload("Permissions").Find(&roles)

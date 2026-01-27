@@ -10,6 +10,11 @@
   let { data } = $props();
 
   let { profile, user } = $derived(data);
+
+  let rawRole = $derived(profile?.role || user.role);
+  let roleName = $derived(
+    typeof rawRole === "object" ? rawRole?.name : rawRole,
+  );
 </script>
 
 <div class="container max-w-2xl py-10 mx-auto">
@@ -31,7 +36,7 @@
         <div class="space-y-1">
           <Label class="text-xs text-muted-foreground">Роль</Label>
           <div class="font-medium capitalize">
-            {user.role || profile?.role}
+            {roleName}
           </div>
         </div>
       </div>

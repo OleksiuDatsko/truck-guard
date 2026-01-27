@@ -175,13 +175,32 @@ func HandleGetMyProfile(c *gin.Context) {
 		return
 	}
 
+	authUser, err := clients.NewAuthClient().GetUser(c.Request.Context(), authID, c.GetHeader("Authorization"))
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to get user from Auth service"})
+		return
+	}
+
 	var user models.User
 	if err := repository.DB.Where("auth_id = ?", authID).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Profile not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	response := gin.H{
+		"id":           user.ID,
+		"auth_id":      user.AuthID,
+		"first_name":   user.FirstName,
+		"last_name":    user.LastName,
+		"third_name":   user.ThirdName,
+		"phone_number": user.PhoneNumber,
+		"email":        user.Email,
+		"notes":        user.Notes,
+		"username":     authUser.Username,
+		"role":         authUser.Role,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func HandleUpdateMyProfile(c *gin.Context) {

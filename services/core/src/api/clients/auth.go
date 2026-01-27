@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/truckguard/core/src/api/dtos"
 )
 
 type AuthClient struct {
@@ -167,29 +169,59 @@ func (c *AuthClient) RegisterUser(ctx context.Context, username, password, role 
 }
 
 func (c *AuthClient) DeleteUser(ctx context.Context, userID uint, authHeader, apiKeyHeader string) error {
-    url := fmt.Sprintf("%s/admin/users/%d", c.BaseURL, userID)
+	url := fmt.Sprintf("%s/admin/users/%d", c.BaseURL, userID)
 
-    req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
-    if err != nil {
-        return fmt.Errorf("failed to create delete user request: %w", err)
-    }
+	req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create delete user request: %w", err)
+	}
 
-    if authHeader != "" {
-        req.Header.Set("Authorization", authHeader)
-    }
-    if apiKeyHeader != "" {
-        req.Header.Set("X-Api-Key", apiKeyHeader)
-    }
+	if authHeader != "" {
+		req.Header.Set("Authorization", authHeader)
+	}
+	if apiKeyHeader != "" {
+		req.Header.Set("X-Api-Key", apiKeyHeader)
+	}
 
-    resp, err := c.HTTPClient.Do(req)
-    if err != nil {
-        return fmt.Errorf("auth service delete request failed: %w", err)
-    }
-    defer resp.Body.Close()
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("auth service delete request failed: %w", err)
+	}
+	defer resp.Body.Close()
 
-    if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
-        return fmt.Errorf("auth service delete user returned status: %d", resp.StatusCode)
-    }
+	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("auth service delete user returned status: %d", resp.StatusCode)
+	}
 
-    return nil
+	return nil
+}
+
+func (c *AuthClient) GetUser(ctx context.Context, userID string, authHeader string) (*dtos.AuthUser, error) {
+	url := fmt.Sprintf("%s/admin/users/%s", c.BaseURL, userID)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create get user request: %w", err)
+	}
+
+	if authHeader != "" {
+		req.Header.Set("Authorization", authHeader)
+	}
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("auth service get user request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("auth service get user returned status: %d", resp.StatusCode)
+	}
+
+	var user dtos.AuthUser
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		return nil, fmt.Errorf("failed to decode get user response: %w", err)
+	}
+
+	return &user, nil
 }
