@@ -3,8 +3,32 @@ package models
 import (
 	"time"
 
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
+
+type CustomsPost struct {
+	gorm.Model
+	Name      string `json:"name"`
+	IsDefault bool   `json:"is_default" gorm:"default:false"`
+
+	Gates []Gate `gorm:"foreignKey:CustomsPostID" json:"gates,omitempty"`
+}
+
+type CustomsMode struct {
+	gorm.Model
+	Name        string `json:"name"`
+	Code        string `gorm:"uniqueIndex;not null" json:"code"`
+	Description string `json:"description"`
+}
+
+type Company struct {
+	gorm.Model
+	Name         string         `json:"name"`
+	EDRPOU       string         `gorm:"uniqueIndex;not null" json:"edrpou"`
+	Details      datatypes.JSON `gorm:"type:jsonb" json:"details"`
+	LastSyncedAt *time.Time     `json:"last_synced_at"`
+}
 
 type CameraPreset struct {
 	gorm.Model
@@ -48,14 +72,16 @@ type ScaleConfig struct {
 
 type Gate struct {
 	gorm.Model
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	IsEntry     bool   `json:"is_entry" gorm:"default:false"`
-	IsExit      bool   `json:"is_exit" gorm:"default:false"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	IsEntry       bool   `json:"is_entry" gorm:"default:false"`
+	IsExit        bool   `json:"is_exit" gorm:"default:false"`
+	CustomsPostID *uint  `json:"customs_post_id"`
 
-	Cameras  []CameraConfig `gorm:"foreignKey:GateID" json:"cameras,omitempty"`
-	Scales   []ScaleConfig  `gorm:"foreignKey:GateID" json:"scales,omitempty"`
-	FlowStep *FlowStep      `gorm:"foreignKey:GateID" json:"flow_step,omitempty"`
+	CustomsPost *CustomsPost   `gorm:"foreignKey:CustomsPostID" json:"customs_post,omitempty"`
+	Cameras     []CameraConfig `gorm:"foreignKey:GateID" json:"cameras,omitempty"`
+	Scales      []ScaleConfig  `gorm:"foreignKey:GateID" json:"scales,omitempty"`
+	FlowStep    *FlowStep      `gorm:"foreignKey:GateID" json:"flow_step,omitempty"`
 }
 
 type Flow struct {
@@ -75,20 +101,94 @@ type FlowStep struct {
 	Flow *Flow `gorm:"foreignKey:FlowID" json:"flow,omitempty"`
 }
 
+type VehicleType struct {
+	gorm.Model
+	Name        string  `json:"name"`
+	Code        string  `gorm:"uniqueIndex;not null" json:"code"`
+	Description string  `json:"description"`
+	EntryPrice  float64 `json:"entry_price"`
+	DailyPrice  float64 `json:"daily_price"`
+	Color       string  `json:"color"`
+}
+
+type PaymentType struct {
+	gorm.Model
+	Name        string `json:"name"`
+	Code        string `gorm:"uniqueIndex;not null" json:"code"`
+	Description string `json:"description"`
+	IsActive    bool   `json:"is_active" gorm:"default:true"`
+	Icon        string `json:"icon"`
+}
+
+type PermitPayer struct {
+	gorm.Model
+	PermitID  uint `gorm:"uniqueIndex:idx_permit_slot" json:"permit_id"`
+	CompanyID uint `json:"company_id"`
+	SlotIndex int  `gorm:"uniqueIndex:idx_permit_slot" json:"slot_index"` // 1, 2, 3, 4
+
+	Company *Company `gorm:"foreignKey:CompanyID" json:"company,omitempty"`
+}
+
+type PermitAudit struct {
+	gorm.Model
+	PermitID uint           `json:"permit_id"`
+	UserID   *uint          `json:"user_id"`
+	Action   string         `json:"action"`
+	Changes  datatypes.JSON `gorm:"type:jsonb" json:"changes"`
+	Comment  string         `json:"comment"`
+
+	User   *User   `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Permit *Permit `gorm:"foreignKey:PermitID" json:"permit,omitempty"`
+}
+
 type Permit struct {
 	gorm.Model
-	FlowID              *uint      `json:"flow_id"`
-	Flow                *Flow      `gorm:"foreignKey:FlowID" json:"flow,omitempty"`
-	PlateFront          string     `json:"plate_front"`
-	PlateBack           string     `json:"plate_back"`
-	TotalWeight         float64    `json:"total_weight"`
-	EntryTime           time.Time  `json:"entry_time"`
-	ExitTime            *time.Time `json:"exit_time"`
-	LastActivityAt      time.Time  `json:"last_activity_at"`
-	IsClosed            bool       `gorm:"default:false" json:"is_closed"`
-	CurrentStepSequence int        `json:"current_step_sequence"`
+	// Flow & State
+	FlowID              *uint `json:"flow_id"`
+	Flow                *Flow `gorm:"foreignKey:FlowID" json:"flow,omitempty"`
+	CurrentStepSequence int   `json:"current_step_sequence"`
+	IsClosed            bool  `gorm:"default:false" json:"is_closed"`
+	IsVoid              bool  `gorm:"default:false" json:"is_void"`
 
-	GateEvents []GateEvent `gorm:"foreignKey:PermitID" json:"gate_events"`
+	// Customs & Document Info
+	CustomsPostID     *uint        `json:"customs_post_id"`
+	CustomsPost       *CustomsPost `gorm:"foreignKey:CustomsPostID" json:"customs_post,omitempty"`
+	DeclarationNumber string       `json:"declaration_number"`
+	CustomsModeCode   string       `json:"customs_mode_code"`
+	CustomsMode       *CustomsMode `gorm:"foreignKey:CustomsModeCode;references:Code" json:"customs_mode,omitempty"`
+	Notes             string       `json:"notes"`
+
+	// Vehicle & Classification
+	VehicleTypeID *uint        `json:"vehicle_type_id"`
+	VehicleType   *VehicleType `gorm:"foreignKey:VehicleTypeID" json:"vehicle_type,omitempty"`
+	PlateFront    string       `json:"plate_front"`
+	PlateBack     string       `json:"plate_back"`
+	TotalWeight   float64      `json:"total_weight"`
+
+	// Financials
+	PaymentTypeID *uint        `json:"payment_type_id"`
+	PaymentType   *PaymentType `gorm:"foreignKey:PaymentTypeID" json:"payment_type,omitempty"`
+	EntryFee      float64      `json:"entry_fee"`
+	ExitFee       float64      `json:"exit_fee"`
+
+	// Payers
+	Payers []PermitPayer `gorm:"foreignKey:PermitID" json:"payers,omitempty"`
+
+	// Time Tracking
+	EntryTime      time.Time  `json:"entry_time"`
+	ExitTime       *time.Time `json:"exit_time"`
+	LastActivityAt time.Time  `json:"last_activity_at"`
+
+	// Verification
+	CreatedBy  *uint      `json:"created_by"`
+	Creator    *User      `gorm:"foreignKey:CreatedBy" json:"creator,omitempty"`
+	VerifiedBy *uint      `json:"verified_by"`
+	Verifier   *User      `gorm:"foreignKey:VerifiedBy" json:"verifier,omitempty"`
+	VerifiedAt *time.Time `json:"verified_at"`
+
+	// Relations
+	GateEvents  []GateEvent   `gorm:"foreignKey:PermitID" json:"gate_events"`
+	AuditEvents []PermitAudit `gorm:"foreignKey:PermitID" json:"audit_events"`
 }
 
 type GateEvent struct {
@@ -174,4 +274,15 @@ type User struct {
 	Email       string `json:"email"`
 	Notes       string `json:"notes"`
 	Role        string `json:"role"`
+
+	CustomsPostID *uint        `json:"customs_post_id"`
+	CustomsPost   *CustomsPost `gorm:"foreignKey:CustomsPostID" json:"customs_post,omitempty"`
+
+	UserSettings *UserSettings `gorm:"foreignKey:UserID" json:"user_settings,omitempty"`
+}
+
+type UserSettings struct {
+	gorm.Model
+	UserID   uint           `gorm:"uniqueIndex;not null" json:"user_id"`
+	Settings datatypes.JSON `gorm:"type:jsonb;default:'{}'" json:"settings"`
 }
