@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/truckguard/core/src/models"
@@ -19,6 +20,32 @@ func HandleGetPermits(c *gin.Context) {
 
 	if plate != "" {
 		query = query.Where("plate_front = ? OR plate_back = ?", plate, plate)
+	}
+
+	permsHeader := c.GetHeader("X-Permissions")
+	hasAllPermits := strings.Contains(permsHeader, "read:permits:all")
+
+	if !hasAllPermits {
+		authID := c.GetHeader("X-User-ID")
+		var user models.User
+		if err := repository.DB.Where("auth_id = ?", authID).First(&user).Error; err != nil {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "User profile not found or access denied"})
+			return
+		}
+
+		if user.CustomsPostID != nil {
+			query = query.Where("customs_post_id = ?", user.CustomsPostID)
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"data": []models.Permit{},
+				"meta": gin.H{
+					"total": 0,
+					"page":  page,
+					"limit": limit,
+				},
+			})
+			return
+		}
 	}
 
 	query.Count(&total)

@@ -13,15 +13,16 @@ import (
 
 func HandleCreateUser(c *gin.Context) {
 	var input struct {
-		Username    string `json:"username" binding:"required"`
-		Password    string `json:"password" binding:"required"`
-		Role        string `json:"role"`
-		FirstName   string `json:"first_name"`
-		LastName    string `json:"last_name"`
-		ThirdName   string `json:"third_name"`
-		PhoneNumber string `json:"phone_number"`
-		Email       string `json:"email"`
-		Notes       string `json:"notes"`
+		Username      string `json:"username" binding:"required"`
+		Password      string `json:"password" binding:"required"`
+		Role          string `json:"role"`
+		FirstName     string `json:"first_name"`
+		LastName      string `json:"last_name"`
+		ThirdName     string `json:"third_name"`
+		PhoneNumber   string `json:"phone_number"`
+		Email         string `json:"email"`
+		Notes         string `json:"notes"`
+		CustomsPostID *uint  `json:"customs_post_id"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -54,14 +55,15 @@ func HandleCreateUser(c *gin.Context) {
 	}
 
 	user := models.User{
-		AuthID:      authResp.ID,
-		FirstName:   input.FirstName,
-		LastName:    input.LastName,
-		ThirdName:   input.ThirdName,
-		PhoneNumber: input.PhoneNumber,
-		Email:       input.Email,
-		Notes:       input.Notes,
-		Role:        input.Role,
+		AuthID:        authResp.ID,
+		FirstName:     input.FirstName,
+		LastName:      input.LastName,
+		ThirdName:     input.ThirdName,
+		PhoneNumber:   input.PhoneNumber,
+		Email:         input.Email,
+		Notes:         input.Notes,
+		Role:          input.Role,
+		CustomsPostID: input.CustomsPostID,
 	}
 
 	if err := repository.DB.Create(&user).Error; err != nil {
@@ -134,12 +136,13 @@ func HandleDeleteUser(c *gin.Context) {
 func HandleUpdateUser(c *gin.Context) {
 	id := c.Param("id")
 	var input struct {
-		FirstName   string `json:"first_name"`
-		LastName    string `json:"last_name"`
-		ThirdName   string `json:"third_name"`
-		PhoneNumber string `json:"phone_number"`
-		Email       string `json:"email"`
-		Notes       string `json:"notes"`
+		FirstName     string `json:"first_name"`
+		LastName      string `json:"last_name"`
+		ThirdName     string `json:"third_name"`
+		PhoneNumber   string `json:"phone_number"`
+		Email         string `json:"email"`
+		Notes         string `json:"notes"`
+		CustomsPostID *uint  `json:"customs_post_id"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -159,6 +162,7 @@ func HandleUpdateUser(c *gin.Context) {
 	user.PhoneNumber = input.PhoneNumber
 	user.Email = input.Email
 	user.Notes = input.Notes
+	user.CustomsPostID = input.CustomsPostID
 
 	if err := repository.DB.Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile in Core"})

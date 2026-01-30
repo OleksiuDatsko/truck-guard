@@ -982,27 +982,6 @@ paths:
               schema: { $ref: "#/components/schemas/RawPlateEvent" }
         404:
           $ref: "#/components/responses/NotFound"
-    patch:
-      tags: ["Events: Raw"]
-      summary: Update plate event (manual correction)
-      description: |
-        Manually correct the recognized plate string.
-        Permissions: `update:events`
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                plate_corrected: { type: string }
-      responses:
-        200:
-          description: Event updated
 
   /api/events/weight:
     get:
@@ -1158,7 +1137,7 @@ paths:
       summary: List all permits
       description: |
         List all vehicle permits (correlated passes).
-        Permissions: `read:events`
+        Permissions: `read:permits`, `read:permits:all`
       parameters:
         - name: page
           in: query
@@ -1242,6 +1221,7 @@ paths:
                 phone_number: { type: string }
                 email: { type: string }
                 notes: { type: string }
+                customs_post_id: { type: integer, nullable: true }
       responses:
         201:
           description: User created
@@ -1292,6 +1272,7 @@ paths:
                 phone_number: { type: string }
                 email: { type: string }
                 notes: { type: string }
+                customs_post_id: { type: integer, nullable: true }
       responses:
         200:
           description: User updated
@@ -1436,6 +1417,7 @@ components:
         email: { type: string }
         notes: { type: string }
         role: { type: string }
+        customs_post_id: { type: integer, nullable: true }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
 
@@ -1512,6 +1494,8 @@ components:
         description: { type: string }
         is_entry: { type: boolean }
         is_exit: { type: boolean }
+        customs_post_id: { type: integer }
+        customs_post: { $ref: "#/components/schemas/CustomsPost" }
 
     ExcludedPlate:
       type: object
@@ -1547,21 +1531,38 @@ components:
         id: { type: integer }
         flow_id: { type: integer }
         flow: { $ref: "#/components/schemas/Flow" }
-        gate_id: { type: integer }
-        gate: { $ref: "#/components/schemas/Gate" }
+        customs_post_id: { type: integer }
+        customs_post: { $ref: "#/components/schemas/CustomsPost" }
+        declaration_number: { type: string }
+        customs_mode_id: { type: integer }
+        customs_mode: { $ref: "#/components/schemas/CustomsMode" }
+        notes: { type: string }
+        vehicle_type_id: { type: integer }
+        vehicle_type: { $ref: "#/components/schemas/VehicleType" }
         plate_front: { type: string }
         plate_back: { type: string }
         total_weight: { type: number }
+        payment_type_id: { type: integer }
+        payment_type: { $ref: "#/components/schemas/PaymentType" }
+        entry_fee: { type: number }
+        exit_fee: { type: number }
+        payers:
+          type: array
+          items: { $ref: "#/components/schemas/PermitPayer" }
         entry_time: { type: string, format: date-time }
         exit_time: { type: string, format: date-time }
+        last_activity_at: { type: string, format: date-time }
         is_closed: { type: boolean }
-        created_at: { type: string, format: date-time }
-        plate_events:
+        is_void: { type: boolean }
+        created_by: { type: integer }
+        verified_by: { type: integer }
+        verified_at: { type: string, format: date-time }
+        gate_events:
           type: array
-          items: { $ref: "#/components/schemas/RawPlateEvent" }
-        weight_events:
+          items: { $ref: "#/components/schemas/GateEvent" }
+        audit_events:
           type: array
-          items: { $ref: "#/components/schemas/RawWeightEvent" }
+          items: { $ref: "#/components/schemas/PermitAudit" }
 
     ScaleConfig:
       type: object
@@ -1585,8 +1586,6 @@ components:
         camera_id: { type: string }
         camera_name: { type: string }
         plate: { type: string }
-        plate_corrected: { type: string }
-        corrected_by: { type: string }
         is_manual: { type: boolean }
         image_key: { type: string }
         timestamp: { type: string, format: date-time }
@@ -1646,3 +1645,76 @@ components:
         weight_events:
           type: array
           items: { $ref: "#/components/schemas/RawWeightEvent" }
+
+    CustomsPost:
+      type: object
+      required: [name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        is_default: { type: boolean }
+        gates:
+          type: array
+          items: { $ref: "#/components/schemas/Gate" }
+
+    CustomsMode:
+      type: object
+      required: [name, code]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        code: { type: string }
+        description: { type: string }
+
+    Company:
+      type: object
+      required: [name, edrpou]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        edrpou: { type: string }
+        details: { type: object }
+        last_synced_at: { type: string, format: date-time }
+
+    VehicleType:
+      type: object
+      required: [name, code]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        code: { type: string }
+        description: { type: string }
+        entry_price: { type: number }
+        daily_price: { type: number }
+        color: { type: string }
+
+    PaymentType:
+      type: object
+      required: [name, code]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        code: { type: string }
+        description: { type: string }
+        is_active: { type: boolean }
+        icon: { type: string }
+
+    PermitPayer:
+      type: object
+      properties:
+        id: { type: integer }
+        permit_id: { type: integer }
+        company_id: { type: integer }
+        company: { $ref: "#/components/schemas/Company" }
+        slot_index: { type: integer }
+
+    PermitAudit:
+      type: object
+      properties:
+        id: { type: integer }
+        permit_id: { type: integer }
+        user_id: { type: integer }
+        action: { type: string }
+        changes: { type: object }
+        comment: { type: string }
+        created_at: { type: string, format: date-time }
