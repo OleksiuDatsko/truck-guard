@@ -1149,7 +1149,22 @@ paths:
           in: query
           description: Filter permits by license plate (exact match on front or back)
           schema: { type: string }
+    post:
+      tags: ["Operations: Permits"]
+      summary: Create a new permit manually
+      description: |
+        Create a new permit without a pre-existing gate event.
+        Permissions: `create:permits`
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Permit" }
       responses:
+        201:
+          description: Permit created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Permit" }
         200:
           description: List of permits
           content:
@@ -1168,7 +1183,7 @@ paths:
       summary: Get permit by ID
       description: |
         Retrieve detailed vehicle permit with image links.
-        Permissions: `read:events`
+        Permissions: `read:permits`, `read:permits:all`
       parameters:
         - name: id
           in: path
@@ -1182,6 +1197,27 @@ paths:
               schema: { $ref: "#/components/schemas/Permit" }
         404:
           $ref: "#/components/responses/NotFound"
+    put:
+      tags: ["Operations: Permits"]
+      summary: Update permit
+      description: |
+        Update permit details. Verification logic is triggered here.
+        Permissions: `update:permits`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Permit" }
+      responses:
+        200:
+          description: Permit updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Permit" }
 
   # --- Core: Users ---
   /api/users/:
@@ -1370,6 +1406,294 @@ paths:
           content:
             application/json:
               example: { plate: "AA1234BB", confidence: 0.98 }
+
+  # --- Data Service ---
+  /api/data/posts:
+    get:
+      tags: ["Data"]
+      summary: List customs posts
+      parameters:
+        - name: name
+          in: query
+          schema: { type: string }
+      responses:
+        200:
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CustomsPost" }
+    post:
+      tags: ["Data"]
+      summary: Create customs post
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CustomsPost" }
+      responses:
+        201:
+          description: Created
+
+  /api/data/posts/{id}:
+    put:
+      tags: ["Data"]
+      summary: Update customs post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CustomsPost" }
+      responses:
+        200:
+          description: Updated
+    delete:
+      tags: ["Data"]
+      summary: Delete customs post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Deleted
+
+  /api/data/modes:
+    get:
+      tags: ["Data"]
+      summary: List customs modes
+      parameters:
+        - name: code
+          in: query
+          schema: { type: string }
+        - name: name
+          in: query
+          schema: { type: string }
+      responses:
+        200:
+          description: List of modes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CustomsMode" }
+    post:
+      tags: ["Data"]
+      summary: Create customs mode
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CustomsMode" }
+      responses:
+        201:
+          description: Created
+  
+  /api/data/modes/{id}:
+    put:
+      tags: ["Data"]
+      summary: Update customs mode
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CustomsMode" }
+      responses:
+        200:
+          description: Updated
+    delete:
+      tags: ["Data"]
+      summary: Delete customs mode
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Deleted
+
+  /api/data/vehicle-types:
+    get:
+      tags: ["Data"]
+      summary: List vehicle types
+      parameters:
+        - name: code
+          in: query
+          schema: { type: string }
+        - name: name
+          in: query
+          schema: { type: string }
+      responses:
+        200:
+          description: List of vehicle types
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/VehicleType" }
+    post:
+      tags: ["Data"]
+      summary: Create vehicle type
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VehicleType" }
+      responses:
+        201:
+          description: Created
+  
+  /api/data/vehicle-types/{id}:
+    put:
+      tags: ["Data"]
+      summary: Update vehicle type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VehicleType" }
+      responses:
+        200:
+          description: Updated
+    delete:
+      tags: ["Data"]
+      summary: Delete vehicle type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Deleted
+
+  /api/data/payment-types:
+    get:
+      tags: ["Data"]
+      summary: List payment types
+      parameters:
+        - name: code
+          in: query
+          schema: { type: string }
+        - name: is_active
+          in: query
+          schema: { type: boolean }
+      responses:
+        200:
+          description: List of payment types
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PaymentType" }
+    post:
+      tags: ["Data"]
+      summary: Create payment type
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PaymentType" }
+      responses:
+        201:
+          description: Created
+  
+  /api/data/payment-types/{id}:
+    put:
+      tags: ["Data"]
+      summary: Update payment type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PaymentType" }
+      responses:
+        200:
+          description: Updated
+    delete:
+      tags: ["Data"]
+      summary: Delete payment type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Deleted
+
+  /api/data/companies:
+    get:
+      tags: ["Data"]
+      summary: List companies
+      parameters:
+        - name: edrpou
+          in: query
+          schema: { type: string }
+        - name: name
+          in: query
+          schema: { type: string }
+      responses:
+        200:
+          description: List of companies
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Company" }
+    post:
+      tags: ["Data"]
+      summary: Create company
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Company" }
+      responses:
+        201:
+          description: Created
+  
+  /api/data/companies/{id}:
+    put:
+      tags: ["Data"]
+      summary: Update company
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Company" }
+      responses:
+        200:
+          description: Updated
+    delete:
+      tags: ["Data"]
+      summary: Delete company
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        204:
+          description: Deleted
 
 components:
   securitySchemes:

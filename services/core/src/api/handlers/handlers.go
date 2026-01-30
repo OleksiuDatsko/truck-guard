@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -94,9 +96,21 @@ func HandleGetPlateEvents(c *gin.Context) {
 	var total int64
 	limit, offset, page := utils.GetPagination(c)
 
-	repository.DB.Model(&models.RawPlateEvent{}).Count(&total)
+	query := repository.DB.Model(&models.RawPlateEvent{})
 
-	if err := repository.DB.Limit(limit).Offset(offset).Order("created_at desc").Find(&events).Error; err != nil {
+	if plate := c.Query("plate"); plate != "" {
+		query = query.Where("plate LIKE ?", "%"+plate+"%")
+	}
+	if from := c.Query("from"); from != "" {
+		query = query.Where("created_at >= ?", from)
+	}
+	if to := c.Query("to"); to != "" {
+		query = query.Where("created_at <= ?", to)
+	}
+
+	query.Count(&total)
+
+	if err := query.Limit(limit).Offset(offset).Order("created_at desc").Find(&events).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch events"})
 		return
 	}
@@ -110,7 +124,25 @@ func HandleGetPlateEventByID(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
 		return
 	}
-	c.JSON(http.StatusOK, event)
+
+	var response struct {
+		models.RawPlateEvent
+		CorrectedByName string `json:"corrected_by_name,omitempty"`
+	}
+	response.RawPlateEvent = event
+
+	if event.CorrectedBy != "" {
+		var user models.User
+		if err := repository.DB.Where("auth_id = ?", event.CorrectedBy).First(&user).Error; err == nil {
+			name := strings.TrimSpace(fmt.Sprintf("%s %s", user.FirstName, user.LastName))
+			if name == "" {
+				name = fmt.Sprintf("User #%d", user.AuthID)
+			}
+			response.CorrectedByName = name
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func HandleWeightEvent(c *gin.Context) {
@@ -141,9 +173,18 @@ func HandleGetWeightEvents(c *gin.Context) {
 	var total int64
 	limit, offset, page := utils.GetPagination(c)
 
-	repository.DB.Model(&models.RawWeightEvent{}).Count(&total)
+	query := repository.DB.Model(&models.RawWeightEvent{})
 
-	if err := repository.DB.Limit(limit).Offset(offset).Order("created_at desc").Find(&events).Error; err != nil {
+	if from := c.Query("from"); from != "" {
+		query = query.Where("created_at >= ?", from)
+	}
+	if to := c.Query("to"); to != "" {
+		query = query.Where("created_at <= ?", to)
+	}
+
+	query.Count(&total)
+
+	if err := query.Limit(limit).Offset(offset).Order("created_at desc").Find(&events).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch weight events"})
 		return
 	}
@@ -165,9 +206,21 @@ func HandleGetSystemEvents(c *gin.Context) {
 	var total int64
 	limit, offset, page := utils.GetPagination(c)
 
-	repository.DB.Model(&models.SystemEvent{}).Count(&total)
+	query := repository.DB.Model(&models.SystemEvent{})
 
-	if err := repository.DB.Limit(limit).Offset(offset).Order("created_at desc").Find(&events).Error; err != nil {
+	if eventType := c.Query("type"); eventType != "" {
+		query = query.Where("type = ?", eventType)
+	}
+	if from := c.Query("from"); from != "" {
+		query = query.Where("created_at >= ?", from)
+	}
+	if to := c.Query("to"); to != "" {
+		query = query.Where("created_at <= ?", to)
+	}
+
+	query.Count(&total)
+
+	if err := query.Limit(limit).Offset(offset).Order("created_at desc").Find(&events).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch system events"})
 		return
 	}
@@ -189,9 +242,21 @@ func HandleGetGateEvents(c *gin.Context) {
 	var total int64
 	limit, offset, page := utils.GetPagination(c)
 
-	repository.DB.Model(&models.GateEvent{}).Count(&total)
+	query := repository.DB.Model(&models.GateEvent{})
 
-	if err := repository.DB.Limit(limit).Offset(offset).Order("created_at desc").
+	if gate := c.Query("gate"); gate != "" {
+		query = query.Where("gate_id = ?", gate)
+	}
+	if from := c.Query("from"); from != "" {
+		query = query.Where("created_at >= ?", from)
+	}
+	if to := c.Query("to"); to != "" {
+		query = query.Where("created_at <= ?", to)
+	}
+
+	query.Count(&total)
+
+	if err := query.Limit(limit).Offset(offset).Order("created_at desc").
 		Preload("Gate").
 		Preload("WeightEvents").Preload("PlateEvents").
 		Find(&events).Error; err != nil {

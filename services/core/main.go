@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/truckguard/core/src/api/handlers"
+	"github.com/truckguard/core/src/api/handlers/data"
 	"github.com/truckguard/core/src/api/middleware"
 	"github.com/truckguard/core/src/models"
 	"github.com/truckguard/core/src/repository"
@@ -72,6 +73,34 @@ func main() {
 
 		}
 
+		dataGroup := api.Group("/data")
+		{
+			dataGroup.GET("/posts", middleware.RequireCorePermission("read:settings"), data.HandleListPosts)
+			dataGroup.POST("/posts", middleware.RequireCorePermission("manage:settings"), data.HandleCreatePost)
+			dataGroup.PUT("/posts/:id", middleware.RequireCorePermission("manage:settings"), data.HandleUpdatePost)
+			dataGroup.DELETE("/posts/:id", middleware.RequireCorePermission("manage:settings"), data.HandleDeletePost)
+
+			dataGroup.GET("/modes", middleware.RequireCorePermission("read:settings"), data.HandleListModes)
+			dataGroup.POST("/modes", middleware.RequireCorePermission("manage:settings"), data.HandleCreateMode)
+			dataGroup.PUT("/modes/:id", middleware.RequireCorePermission("manage:settings"), data.HandleUpdateMode)
+			dataGroup.DELETE("/modes/:id", middleware.RequireCorePermission("manage:settings"), data.HandleDeleteMode)
+
+			dataGroup.GET("/vehicle-types", middleware.RequireCorePermission("read:settings"), data.HandleListVehicleTypes)
+			dataGroup.POST("/vehicle-types", middleware.RequireCorePermission("manage:settings"), data.HandleCreateVehicleType)
+			dataGroup.PUT("/vehicle-types/:id", middleware.RequireCorePermission("manage:settings"), data.HandleUpdateVehicleType)
+			dataGroup.DELETE("/vehicle-types/:id", middleware.RequireCorePermission("manage:settings"), data.HandleDeleteVehicleType)
+
+			dataGroup.GET("/payment-types", middleware.RequireCorePermission("read:settings"), data.HandleListPaymentTypes)
+			dataGroup.POST("/payment-types", middleware.RequireCorePermission("manage:settings"), data.HandleCreatePaymentType)
+			dataGroup.PUT("/payment-types/:id", middleware.RequireCorePermission("manage:settings"), data.HandleUpdatePaymentType)
+			dataGroup.DELETE("/payment-types/:id", middleware.RequireCorePermission("manage:settings"), data.HandleDeletePaymentType)
+
+			dataGroup.GET("/companies", middleware.RequireCorePermission("read:settings"), data.HandleListCompanies)
+			dataGroup.POST("/companies", middleware.RequireCorePermission("manage:settings"), data.HandleCreateCompany)
+			dataGroup.PUT("/companies/:id", middleware.RequireCorePermission("manage:settings"), data.HandleUpdateCompany)
+			dataGroup.DELETE("/companies/:id", middleware.RequireCorePermission("manage:settings"), data.HandleDeleteCompany)
+		}
+
 		events := api.Group("/events")
 		{
 			events.GET("/plate", middleware.RequireCorePermission("read:events"), handlers.HandleGetPlateEvents)
@@ -106,6 +135,8 @@ func main() {
 		{
 			permits.GET("/", middleware.RequireCorePermission("read:permits"), handlers.HandleGetPermits)
 			permits.GET("/:id", middleware.RequireCorePermission("read:permits"), handlers.HandleGetPermitByID)
+			permits.POST("/", middleware.RequireCorePermission("create:permits"), handlers.HandleCreatePermit)
+			permits.PUT("/:id", middleware.RequireCorePermission("update:permits"), handlers.HandleUpdatePermit)
 		}
 
 		users := api.Group("/users")

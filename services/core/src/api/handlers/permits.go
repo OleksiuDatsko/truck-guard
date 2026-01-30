@@ -1,13 +1,16 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/truckguard/core/src/models"
 	"github.com/truckguard/core/src/repository"
 	"github.com/truckguard/core/src/utils"
+	"gorm.io/datatypes"
 )
 
 func HandleGetPermits(c *gin.Context) {
@@ -58,6 +61,96 @@ func HandleGetPermits(c *gin.Context) {
 		Find(&permits)
 
 	utils.SendPaginatedResponse(c, permits, total, page, limit)
+}
+
+func HandleCreatePermit(c *gin.Context) {
+	var input models.Permit
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	authID := c.GetHeader("X-User-ID")
+	// Resolve user ID
+	var user models.User
+	repository.DB.Where("auth_id = ?", authID).First(&user)
+	if user.ID != 0 {
+		input.CreatedBy = &user.ID
+	}
+
+	// 1. Assign Flow
+	if input.FlowID == nil {
+		// Logic to assign default flow or based on post
+		var defaultFlow models.Flow
+		if err := repository.DB.First(&defaultFlow).Error; err == nil {
+			input.FlowID = &defaultFlow.ID
+			input.CurrentStepSequence = 1
+		}
+	} else {
+		input.CurrentStepSequence = 1
+	}
+
+	input.EntryTime = time.Now()
+	input.LastActivityAt = time.Now()
+
+	if err := repository.DB.Create(&input).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create permit"})
+		return
+	}
+
+	// Audit log
+	logPermitAudit(input.ID, user.ID, "create", map[string]interface{}{"source": "manual"}, "Створено вручну")
+
+	c.JSON(http.StatusCreated, input)
+}
+
+func HandleUpdatePermit(c *gin.Context) {
+	id := c.Param("id")
+	var permit models.Permit
+	if err := repository.DB.Preload("CustomsPost").First(&permit, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Permit not found"})
+		return
+	}
+
+	var input map[string]interface{}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	authID := c.GetHeader("X-User-ID")
+	var user models.User
+	repository.DB.Where("auth_id = ?", authID).First(&user)
+
+	// Update fields
+	if err := repository.DB.Model(&permit).Updates(input).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update permit"})
+		return
+	}
+
+	// Check verification
+	if val, ok := input["verified_by"]; ok && val != nil {
+		now := time.Now()
+		repository.DB.Model(&permit).Update("verified_at", now)
+	}
+
+	// Audit
+
+	logPermitAudit(permit.ID, user.ID, "update", input, "Оновлено оператором")
+
+	c.JSON(http.StatusOK, permit)
+}
+
+func logPermitAudit(permitID uint, userID uint, action string, changes interface{}, comment string) {
+	jsonBytes, _ := json.Marshal(changes)
+	audit := models.PermitAudit{
+		PermitID: permitID,
+		UserID:   &userID,
+		Action:   action,
+		Changes:  datatypes.JSON(jsonBytes),
+		Comment:  comment,
+	}
+	repository.DB.Create(&audit)
 }
 
 func HandleGetPermitByID(c *gin.Context) {
