@@ -16,8 +16,8 @@
   const data = {
     navMain: [
       {
-        title: "Моніторинг",
-        url: "/dashboard",
+        title: "Події",
+        url: "/events",
         icon: LayoutDashboard,
         permissions: ["read:events", "read:trips"],
       },

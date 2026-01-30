@@ -50,6 +50,38 @@ export class CoreClient {
         return this.fetchWithAuth<CoreUser>('/users/me', 'PUT', data);
     }
 
+    // --- Events ---
+    async getEvents<T>(type: string, page: number = 1, limit: number = 10, filters?: Record<string, string | undefined>): Promise<T> {
+        const query = new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+        });
+
+        if (filters) {
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value) query.append(key, value);
+            });
+        }
+
+        return this.fetchWithAuth<T>(`/events/${type}?${query.toString()}`);
+    }
+
+    async getGateEvent<T>(id: string | number): Promise<T> {
+        return this.fetchWithAuth<T>(`/events/gate/${id}`);
+    }
+
+    async getSystemEvent<T>(id: string | number): Promise<T> {
+        return this.fetchWithAuth<T>(`/events/system/${id}`);
+    }
+
+    async getPlateEvent<T>(id: string | number): Promise<T> {
+        return this.fetchWithAuth<T>(`/events/plate/${id}`);
+    }
+
+    async correctPlate(id: string | number, newPlate: string): Promise<boolean> {
+        return this.fetchWithAuth<boolean>(`/events/plate/${id}`, 'PATCH', { plate_corrected: newPlate });
+    }
+
     private async fetchWithAuth<T>(endpoint: string, method: string = 'GET', body?: any): Promise<T> {
         if (!this.token) {
             throw new Error('CoreClient: No token provided');
