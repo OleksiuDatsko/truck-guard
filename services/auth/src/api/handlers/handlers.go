@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -90,15 +89,32 @@ func HandleValidate(c *gin.Context) {
 		}
 	}
 
-	a := c.GetHeader("Authorization")
-	log.Println(a)
-	if strings.HasPrefix(a, "Bearer ") {
-		ts := strings.TrimPrefix(a, "Bearer ")
-		token, err := jwt.Parse(ts, func(t *jwt.Token) (interface{}, error) { return repository.JWTSecret, nil })
+	var tokenString string
+
+	authHeader := c.GetHeader("Authorization")
+	if strings.HasPrefix(authHeader, "Bearer ") {
+		tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+	}
+
+	if tokenString == "" {
+		if cookie, err := c.Cookie("session"); err == nil {
+			tokenString = cookie
+		}
+	}
+
+	if tokenString != "" {
+		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+			return repository.JWTSecret, nil
+		})
 
 		if err == nil && token.Valid {
 			if claims, ok := token.Claims.(jwt.MapClaims); ok {
-				userID := uint(claims["user_id"].(float64))
+				userIDFloat, ok := claims["user_id"].(float64)
+				if !ok {
+					c.Status(401)
+					return
+				}
+				userID := uint(userIDFloat)
 
 				perms := repository.GetUserPermissions(userID)
 
