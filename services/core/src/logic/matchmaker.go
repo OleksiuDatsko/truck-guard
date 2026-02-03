@@ -3,7 +3,7 @@ package logic
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/truckguard/core/src/models"
@@ -18,12 +18,12 @@ var tracer = otel.Tracer("matchmaker")
 func getGateDeviceCount(gateID uint) int64 {
 	var countCameras int64
 	if err := repository.DB.Model(&models.CameraConfig{}).Where("gate_id = ?", gateID).Count(&countCameras).Error; err != nil {
-		log.Printf("Failed to get gate camera count: %v", err)
+		slog.Error("Failed to get gate camera count", "gate_id", gateID, "error", err)
 	}
 
 	var countScales int64
 	if err := repository.DB.Model(&models.ScaleConfig{}).Where("gate_id = ?", gateID).Count(&countScales).Error; err != nil {
-		log.Printf("Failed to get gate scale count: %v", err)
+		slog.Error("Failed to get gate scale count", "gate_id", gateID, "error", err)
 	}
 
 	return countCameras + countScales
@@ -37,7 +37,7 @@ func MatchPlateEvent(ctx context.Context, event *models.RawPlateEvent) {
 	db := repository.DB
 
 	if err := db.WithContext(ctx).Preload("Camera").First(&event).Error; err != nil {
-		log.Printf("Camera %+v has no GateID", &event.Camera)
+		slog.Error("Camera has no GateID", "camera_id", event.Camera.ID, "camera", event.Camera)
 		span.RecordError(err)
 		return
 	}
@@ -47,7 +47,7 @@ func MatchPlateEvent(ctx context.Context, event *models.RawPlateEvent) {
 		span.RecordError(err)
 		return
 	}
-	log.Println("Gate:", gate.Name, *event.Camera.GateID)
+	slog.Info("Gate identified", "gate_name", gate.Name, "gate_id", *event.Camera.GateID)
 	gateEventID := getOrCreateGateEvent(ctx, gate.ID)
 	updateGateEventCount(ctx, gate.ID)
 
@@ -97,10 +97,10 @@ func ProcessGateEventToPermit(ctx context.Context, gateEventID uint) {
 		Preload("PlateEvents").
 		Preload("WeightEvents").
 		First(&ge, gateEventID).Error; err != nil {
-		log.Printf("Failed to load GateEvent %d: %v", gateEventID, err)
+		slog.Error("Failed to load GateEvent", "gate_event_id", gateEventID, "error", err)
 		return
 	}
-	log.Println("PlateEvents:", len(ge.PlateEvents), "WeightEvents:", len(ge.WeightEvents))
+	slog.Info("Gathered gate events", "plate_events_count", len(ge.PlateEvents), "weight_events_count", len(ge.WeightEvents))
 
 	// 1. Identify the best plate (use corrected if available)
 	// We iterate through all plate events to find a matching permit or to pick a plate for creation
@@ -108,7 +108,7 @@ func ProcessGateEventToPermit(ctx context.Context, gateEventID uint) {
 	var plateCandidates []string
 
 	for _, pe := range ge.PlateEvents {
-		log.Println("PlateEvent:", pe.Plate, pe.PlateCorrected)
+		slog.Debug("Processing plate event", "plate", pe.Plate, "plate_corrected", pe.PlateCorrected)
 		p := pe.Plate
 		if pe.PlateCorrected != "" {
 			p = pe.PlateCorrected
@@ -121,7 +121,7 @@ func ProcessGateEventToPermit(ctx context.Context, gateEventID uint) {
 		}
 	}
 
-	log.Println("Best plate:", bestPlate, "Plate candidates:", plateCandidates)
+	slog.Info("Plate candidates identified", "best_plate", bestPlate, "candidates", plateCandidates)
 
 	// If no plates yet (e.g. only weight event), we might skip or try to find permit by other means?
 	// For now, if no plate, we can't identify vehicle unless we join by time/gate which is risky.
@@ -173,12 +173,12 @@ func ProcessGateEventToPermit(ctx context.Context, gateEventID uint) {
 			ge.PermitID = &permit.ID
 			repository.DB.Save(&ge)
 		} else {
-			log.Printf("Failed to create permit: %v", err)
+			slog.Error("Failed to create permit", "best_plate", bestPlate, "error", err)
 		}
 	}
 
 	if !found {
-		log.Println("Permit not found")
+		slog.Warn("Permit not found for gate event", "gate_event_id", ge.ID, "plate_candidates", plateCandidates)
 		return
 	}
 
@@ -224,7 +224,7 @@ func ProcessGateEventToPermit(ctx context.Context, gateEventID uint) {
 	}
 
 	// 4. Exit Gate Logic
-	log.Println("Gate:", ge.Gate)
+	slog.Debug("Checking exit gate", "gate_id", ge.Gate.ID, "is_exit", ge.Gate.IsExit)
 	if ge.Gate.IsExit {
 		permit.IsClosed = true
 		now := time.Now()
@@ -232,8 +232,8 @@ func ProcessGateEventToPermit(ctx context.Context, gateEventID uint) {
 		dirty = true
 		ge.PermitID = &permit.ID
 		repository.DB.WithContext(ctx).Save(&ge)
-		log.Println("GateEvent saved:", ge)
-		log.Println("Permit saved:", permit)
+		slog.Debug("GateEvent saved", "gate_event_id", ge.ID)
+		slog.Debug("Permit saved", "permit_id", permit.ID, "is_closed", permit.IsClosed)
 	}
 
 	if dirty {
@@ -251,11 +251,11 @@ func getOrCreateGateEvent(ctx context.Context, gateID uint) uint {
 
 	gateEventID, err := repository.RDB.Get(ctx, redisKeyID).Uint64()
 	if err != nil {
-		log.Printf("Failed to get gate event ID: %v", err)
+		slog.Debug("Failed to get active gate event ID from Redis", "gate_id", gateID, "error", err)
 	}
 	count, err := repository.RDB.Get(ctx, redisKeyCount).Int64()
 	if err != nil {
-		log.Printf("Failed to get gate event count: %v", err)
+		slog.Debug("Failed to get active gate event count from Redis", "gate_id", gateID, "error", err)
 	}
 
 	if gateEventID > 0 && count > 0 {
@@ -280,7 +280,7 @@ func updateGateEventCount(ctx context.Context, gateID uint) {
 	redisKeyCount := fmt.Sprintf("active_gate_count:%d", gateID)
 	count, err := repository.RDB.Get(ctx, redisKeyCount).Int64()
 	if err != nil {
-		log.Printf("Failed to get gate event count: %v", err)
+		slog.Error("Failed to get gate event count from Redis for update", "gate_id", gateID, "error", err)
 		return
 	}
 	repository.RDB.Set(ctx, redisKeyCount, count-1, 15*time.Second)

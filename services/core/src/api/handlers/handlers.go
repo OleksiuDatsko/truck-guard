@@ -3,7 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -20,7 +20,7 @@ func HandlePlateEvent(c *gin.Context) {
 	var event models.RawPlateEvent
 
 	if err := c.ShouldBindBodyWith(&event, binding.JSON); err != nil {
-		log.Println(err)
+		slog.Error("Failed to bind plate event", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -30,9 +30,11 @@ func HandlePlateEvent(c *gin.Context) {
 	}
 
 	if err := repository.DB.WithContext(c.Request.Context()).Create(&event).Error; err != nil {
+		slog.Error("Failed to save plate event", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save event"})
 		return
 	}
+	slog.Info("Plate event saved", "id", event.ID, "plate", event.Plate, "camera_id", event.CameraID)
 
 	detachCtx := trace.ContextWithSpan(context.Background(), trace.SpanFromContext(c.Request.Context()))
 	go logic.MatchPlateEvent(detachCtx, &event)
@@ -152,7 +154,7 @@ func HandleWeightEvent(c *gin.Context) {
 	var event models.RawWeightEvent
 
 	if err := c.ShouldBindBodyWith(&event, binding.JSON); err != nil {
-		log.Println(err)
+		slog.Error("Failed to bind weight event", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -162,9 +164,11 @@ func HandleWeightEvent(c *gin.Context) {
 	}
 
 	if err := repository.DB.WithContext(c.Request.Context()).Create(&event).Error; err != nil {
+		slog.Error("Failed to record weight", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record weight"})
 		return
 	}
+	slog.Info("Weight event saved", "id", event.ID, "weight", event.Weight, "scale_id", event.ScaleID)
 
 	detachCtx := trace.ContextWithSpan(context.Background(), trace.SpanFromContext(c.Request.Context()))
 	go logic.MatchWeightEvent(detachCtx, &event)

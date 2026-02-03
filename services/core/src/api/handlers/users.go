@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -67,9 +68,11 @@ func HandleCreateUser(c *gin.Context) {
 	}
 
 	if err := repository.DB.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
+		slog.Error("Failed to create profile in Core", "auth_id", user.AuthID, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create profile in Core"})
 		return
 	}
+	slog.Info("User created successfully", "auth_id", user.AuthID, "username", input.Username)
 
 	c.JSON(http.StatusCreated, user)
 }
@@ -105,9 +108,10 @@ func HandleGetUserByAuthID(c *gin.Context) {
 
 func HandleDeleteUser(c *gin.Context) {
 	id := c.Param("id")
-	fmt.Println(id)
+	slog.Debug("Processing user deletion request", "auth_id", id)
 	var user models.User
 	if err := repository.DB.WithContext(c.Request.Context()).Where("auth_id = ?", id).First(&user).Error; err != nil {
+		slog.Warn("User profile not found for deletion", "auth_id", id)
 		c.JSON(http.StatusNotFound, gin.H{"error": "User profile not found"})
 		return
 	}
@@ -126,10 +130,12 @@ func HandleDeleteUser(c *gin.Context) {
 	}
 
 	if err := repository.DB.WithContext(c.Request.Context()).Where("auth_id = ?", id).Delete(&models.User{}).Error; err != nil {
+		slog.Error("Failed to delete profile from Core", "auth_id", id, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete profile from Core"})
 		return
 	}
 
+	slog.Info("User deleted successfully from all services", "auth_id", id)
 	c.JSON(http.StatusOK, gin.H{"status": "deleted from both services"})
 }
 

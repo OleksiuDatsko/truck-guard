@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -39,7 +40,7 @@ func Logger() gin.HandlerFunc {
 			attrs = append(attrs, slog.String("error", errorMessage))
 		}
 
-		msg := "HTTP Request"
+		msg := fmt.Sprintf("HTTP Request: %s", path)
 		if statusCode >= 500 {
 			slog.Error(msg, attrs...)
 		} else if statusCode >= 400 {
