@@ -12,17 +12,17 @@ import (
 func HandleListPresets(c *gin.Context) {
 	var presets []models.CameraPreset
 	var total int64
-	repository.DB.Model(&models.CameraPreset{}).Count(&total)
+	repository.DB.WithContext(c.Request.Context()).Model(&models.CameraPreset{}).Count(&total)
 
 	limit, offset, page := utils.GetPagination(c)
-	repository.DB.Limit(limit).Offset(offset).Find(&presets)
+	repository.DB.WithContext(c.Request.Context()).Limit(limit).Offset(offset).Find(&presets)
 	utils.SendPaginatedResponse(c, presets, total, page, limit)
 }
 
 func HandleGetPreset(c *gin.Context) {
 	id := c.Param("id")
 	var preset models.CameraPreset
-	if err := repository.DB.First(&preset, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&preset, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Preset not found"})
 		return
 	}
@@ -35,7 +35,7 @@ func HandleCreatePreset(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := repository.DB.Create(&preset).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&preset).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create preset"})
 		return
 	}
@@ -46,7 +46,7 @@ func HandleUpdatePreset(c *gin.Context) {
 	id := c.Param("id")
 	var preset models.CameraPreset
 
-	if err := repository.DB.First(&preset, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&preset, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Preset not found"})
 		return
 	}
@@ -56,20 +56,20 @@ func HandleUpdatePreset(c *gin.Context) {
 		return
 	}
 
-	repository.DB.Save(&preset)
+	repository.DB.WithContext(c.Request.Context()).Save(&preset)
 	c.JSON(http.StatusOK, preset)
 }
 
 func HandleDeletePreset(c *gin.Context) {
 	id := c.Param("id")
 	var count int64
-	repository.DB.Model(&models.CameraConfig{}).Where("preset_id = ?", id).Count(&count)
+	repository.DB.WithContext(c.Request.Context()).Model(&models.CameraConfig{}).Where("preset_id = ?", id).Count(&count)
 	if count > 0 {
 		c.JSON(http.StatusConflict, gin.H{"error": "Cannot delete preset: it is used by active cameras"})
 		return
 	}
 
-	if err := repository.DB.Delete(&models.CameraPreset{}, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Delete(&models.CameraPreset{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Delete failed"})
 		return
 	}

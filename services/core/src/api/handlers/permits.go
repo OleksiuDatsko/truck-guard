@@ -19,7 +19,7 @@ func HandleGetPermits(c *gin.Context) {
 	limit, offset, page := utils.GetPagination(c)
 	plate := c.Query("plate")
 
-	query := repository.DB.Model(&models.Permit{})
+	query := repository.DB.WithContext(c.Request.Context()).Model(&models.Permit{})
 
 	if plate != "" {
 		query = query.Where("plate_front = ? OR plate_back = ?", plate, plate)
@@ -31,7 +31,7 @@ func HandleGetPermits(c *gin.Context) {
 	if !hasAllPermits {
 		authID := c.GetHeader("X-User-ID")
 		var user models.User
-		if err := repository.DB.Where("auth_id = ?", authID).First(&user).Error; err != nil {
+		if err := repository.DB.WithContext(c.Request.Context()).Where("auth_id = ?", authID).First(&user).Error; err != nil {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "User profile not found or access denied"})
 			return
 		}
@@ -73,7 +73,7 @@ func HandleCreatePermit(c *gin.Context) {
 	authID := c.GetHeader("X-User-ID")
 	// Resolve user ID
 	var user models.User
-	repository.DB.Where("auth_id = ?", authID).First(&user)
+	repository.DB.WithContext(c.Request.Context()).Where("auth_id = ?", authID).First(&user)
 	if user.ID != 0 {
 		input.CreatedBy = &user.ID
 	}
@@ -82,7 +82,7 @@ func HandleCreatePermit(c *gin.Context) {
 	if input.FlowID == nil {
 		// Logic to assign default flow or based on post
 		var defaultFlow models.Flow
-		if err := repository.DB.First(&defaultFlow).Error; err == nil {
+		if err := repository.DB.WithContext(c.Request.Context()).First(&defaultFlow).Error; err == nil {
 			input.FlowID = &defaultFlow.ID
 			input.CurrentStepSequence = 1
 		}
@@ -93,13 +93,13 @@ func HandleCreatePermit(c *gin.Context) {
 	input.EntryTime = time.Now()
 	input.LastActivityAt = time.Now()
 
-	if err := repository.DB.Create(&input).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create permit"})
 		return
 	}
 
 	// Audit log
-	logPermitAudit(input.ID, user.ID, "create", map[string]interface{}{"source": "manual"}, "Створено вручну")
+	logPermitAudit(c, input.ID, user.ID, "create", map[string]interface{}{"source": "manual"}, "Створено вручну")
 
 	c.JSON(http.StatusCreated, input)
 }
@@ -107,7 +107,7 @@ func HandleCreatePermit(c *gin.Context) {
 func HandleUpdatePermit(c *gin.Context) {
 	id := c.Param("id")
 	var permit models.Permit
-	if err := repository.DB.Preload("CustomsPost").First(&permit, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Preload("CustomsPost").First(&permit, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Permit not found"})
 		return
 	}
@@ -120,10 +120,10 @@ func HandleUpdatePermit(c *gin.Context) {
 
 	authID := c.GetHeader("X-User-ID")
 	var user models.User
-	repository.DB.Where("auth_id = ?", authID).First(&user)
+	repository.DB.WithContext(c.Request.Context()).Where("auth_id = ?", authID).First(&user)
 
 	// Update fields
-	if err := repository.DB.Model(&permit).Updates(input).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Model(&permit).Updates(input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update permit"})
 		return
 	}
@@ -131,17 +131,17 @@ func HandleUpdatePermit(c *gin.Context) {
 	// Check verification
 	if val, ok := input["verified_by"]; ok && val != nil {
 		now := time.Now()
-		repository.DB.Model(&permit).Update("verified_at", now)
+		repository.DB.WithContext(c.Request.Context()).Model(&permit).Update("verified_at", now)
 	}
 
 	// Audit
 
-	logPermitAudit(permit.ID, user.ID, "update", input, "Оновлено оператором")
+	logPermitAudit(c, permit.ID, user.ID, "update", input, "Оновлено оператором")
 
 	c.JSON(http.StatusOK, permit)
 }
 
-func logPermitAudit(permitID uint, userID uint, action string, changes interface{}, comment string) {
+func logPermitAudit(c *gin.Context, permitID uint, userID uint, action string, changes interface{}, comment string) {
 	jsonBytes, _ := json.Marshal(changes)
 	audit := models.PermitAudit{
 		PermitID: permitID,
@@ -150,13 +150,13 @@ func logPermitAudit(permitID uint, userID uint, action string, changes interface
 		Changes:  datatypes.JSON(jsonBytes),
 		Comment:  comment,
 	}
-	repository.DB.Create(&audit)
+	repository.DB.WithContext(c.Request.Context()).Create(&audit)
 }
 
 func HandleGetPermitByID(c *gin.Context) {
 	id := c.Param("id")
 	var permit models.Permit
-	if err := repository.DB.
+	if err := repository.DB.WithContext(c.Request.Context()).
 		Preload("GateEvents").
 		Preload("GateEvents.Gate").
 		Preload("GateEvents.PlateEvents").

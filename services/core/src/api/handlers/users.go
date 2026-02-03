@@ -66,7 +66,7 @@ func HandleCreateUser(c *gin.Context) {
 		CustomsPostID: input.CustomsPostID,
 	}
 
-	if err := repository.DB.Create(&user).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create profile in Core"})
 		return
 	}
@@ -76,7 +76,7 @@ func HandleCreateUser(c *gin.Context) {
 
 func HandleListUsers(c *gin.Context) {
 	var users []models.User
-	if err := repository.DB.Find(&users).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Find(&users).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
 		return
 	}
@@ -86,7 +86,7 @@ func HandleListUsers(c *gin.Context) {
 func HandleGetUser(c *gin.Context) {
 	id := c.Param("id")
 	var user models.User
-	if err := repository.DB.Where("ID = ?", id).First(&user).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Where("ID = ?", id).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User profile not found"})
 		return
 	}
@@ -96,7 +96,7 @@ func HandleGetUser(c *gin.Context) {
 func HandleGetUserByAuthID(c *gin.Context) {
 	authID := c.Param("authId")
 	var user models.User
-	if err := repository.DB.Where("auth_id = ?", authID).First(&user).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Where("auth_id = ?", authID).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User profile not found for this Auth ID"})
 		return
 	}
@@ -107,7 +107,7 @@ func HandleDeleteUser(c *gin.Context) {
 	id := c.Param("id")
 	fmt.Println(id)
 	var user models.User
-	if err := repository.DB.Where("auth_id = ?", id).First(&user).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Where("auth_id = ?", id).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User profile not found"})
 		return
 	}
@@ -125,7 +125,7 @@ func HandleDeleteUser(c *gin.Context) {
 		}
 	}
 
-	if err := repository.DB.Where("auth_id = ?", id).Delete(&models.User{}).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Where("auth_id = ?", id).Delete(&models.User{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete profile from Core"})
 		return
 	}
@@ -151,7 +151,7 @@ func HandleUpdateUser(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := repository.DB.Where("auth_id = ?", id).First(&user).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Where("auth_id = ?", id).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User profile not found"})
 		return
 	}
@@ -164,7 +164,7 @@ func HandleUpdateUser(c *gin.Context) {
 	user.Notes = input.Notes
 	user.CustomsPostID = input.CustomsPostID
 
-	if err := repository.DB.Save(&user).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile in Core"})
 		return
 	}
@@ -186,7 +186,7 @@ func HandleGetMyProfile(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := repository.DB.Where("auth_id = ?", authID).First(&user).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Where("auth_id = ?", authID).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Profile not found"})
 		return
 	}
@@ -237,7 +237,7 @@ func HandleUpdateMyProfile(c *gin.Context) {
 	}
 
 	var user models.User
-	result := repository.DB.Where("auth_id = ?", realAuthID).First(&user)
+	result := repository.DB.WithContext(c.Request.Context()).Where("auth_id = ?", realAuthID).First(&user)
 
 	if result.Error != nil {
 		user = models.User{
@@ -253,12 +253,12 @@ func HandleUpdateMyProfile(c *gin.Context) {
 	user.Notes = input.Notes
 
 	if result.Error != nil {
-		if err := repository.DB.Create(&user).Error; err != nil {
+		if err := repository.DB.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create profile"})
 			return
 		}
 	} else {
-		if err := repository.DB.Save(&user).Error; err != nil {
+		if err := repository.DB.WithContext(c.Request.Context()).Save(&user).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})
 			return
 		}

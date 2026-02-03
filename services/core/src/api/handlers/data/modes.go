@@ -16,7 +16,7 @@ func HandleListModes(c *gin.Context) {
 	code := c.Query("code")
 	name := c.Query("name")
 
-	query := repository.DB.Model(&models.CustomsMode{})
+	query := repository.DB.WithContext(c.Request.Context()).Model(&models.CustomsMode{})
 	if code != "" {
 		query = query.Where("code ILIKE ?", "%"+code+"%")
 	}
@@ -36,7 +36,7 @@ func HandleCreateMode(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := repository.DB.Create(&input).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create mode"})
 		return
 	}
@@ -46,7 +46,7 @@ func HandleCreateMode(c *gin.Context) {
 func HandleUpdateMode(c *gin.Context) {
 	id := c.Param("id")
 	var mode models.CustomsMode
-	if err := repository.DB.First(&mode, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&mode, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Mode not found"})
 		return
 	}
@@ -60,13 +60,13 @@ func HandleUpdateMode(c *gin.Context) {
 	mode.Code = input.Code
 	mode.Description = input.Description
 
-	repository.DB.Save(&mode)
+	repository.DB.WithContext(c.Request.Context()).Save(&mode)
 	c.JSON(http.StatusOK, mode)
 }
 
 func HandleDeleteMode(c *gin.Context) {
 	id := c.Param("id")
-	if err := repository.DB.Delete(&models.CustomsMode{}, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Delete(&models.CustomsMode{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete"})
 		return
 	}

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/truckguard/core/src/api/dtos"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type AuthClient struct {
@@ -25,7 +26,8 @@ func NewAuthClient() *AuthClient {
 	return &AuthClient{
 		BaseURL: baseURL,
 		HTTPClient: &http.Client{
-			Timeout: 10 * time.Second,
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
+			Timeout:   10 * time.Second,
 		},
 	}
 }

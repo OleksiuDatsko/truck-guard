@@ -15,7 +15,7 @@ func HandleListPosts(c *gin.Context) {
 	limit, offset, page := utils.GetPagination(c)
 	name := c.Query("name")
 
-	query := repository.DB.Model(&models.CustomsPost{})
+	query := repository.DB.WithContext(c.Request.Context()).Model(&models.CustomsPost{})
 	if name != "" {
 		query = query.Where("name ILIKE ?", "%"+name+"%")
 	}
@@ -32,7 +32,7 @@ func HandleCreatePost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := repository.DB.Create(&input).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create post"})
 		return
 	}
@@ -42,7 +42,7 @@ func HandleCreatePost(c *gin.Context) {
 func HandleUpdatePost(c *gin.Context) {
 	id := c.Param("id")
 	var post models.CustomsPost
-	if err := repository.DB.First(&post, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&post, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
 		return
 	}
@@ -56,13 +56,13 @@ func HandleUpdatePost(c *gin.Context) {
 	post.IsDefault = input.IsDefault
 	// Adding more fields if model changes
 
-	repository.DB.Save(&post)
+	repository.DB.WithContext(c.Request.Context()).Save(&post)
 	c.JSON(http.StatusOK, post)
 }
 
 func HandleDeletePost(c *gin.Context) {
 	id := c.Param("id")
-	if err := repository.DB.Delete(&models.CustomsPost{}, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Delete(&models.CustomsPost{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete"})
 		return
 	}

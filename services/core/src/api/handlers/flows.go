@@ -10,7 +10,7 @@ import (
 
 func HandleListFlows(c *gin.Context) {
 	var flows []models.Flow
-	if err := repository.DB.Preload("Steps").Find(&flows).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Preload("Steps").Find(&flows).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch flows"})
 		return
 	}
@@ -24,7 +24,7 @@ func HandleCreateFlow(c *gin.Context) {
 		return
 	}
 
-	if err := repository.DB.Create(&flow).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&flow).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create flow"})
 		return
 	}
@@ -34,7 +34,7 @@ func HandleCreateFlow(c *gin.Context) {
 func HandleGetFlow(c *gin.Context) {
 	id := c.Param("id")
 	var flow models.Flow
-	if err := repository.DB.Preload("Steps.Gate").First(&flow, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Preload("Steps.Gate").First(&flow, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Flow not found"})
 		return
 	}
@@ -44,7 +44,7 @@ func HandleGetFlow(c *gin.Context) {
 func HandleUpdateFlow(c *gin.Context) {
 	id := c.Param("id")
 	var flow models.Flow
-	if err := repository.DB.First(&flow, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&flow, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Flow not found"})
 		return
 	}
@@ -62,12 +62,12 @@ func HandleUpdateFlow(c *gin.Context) {
 	// Steps strategy: Replace all steps
 	if len(input.Steps) > 0 {
 		// remove old steps
-		repository.DB.Where("flow_id = ?", flow.ID).Delete(&models.FlowStep{})
+		repository.DB.WithContext(c.Request.Context()).Where("flow_id = ?", flow.ID).Delete(&models.FlowStep{})
 		// add new ones
 		flow.Steps = input.Steps
 	}
 
-	if err := repository.DB.Save(&flow).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Save(&flow).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update flow"})
 		return
 	}
@@ -77,9 +77,9 @@ func HandleUpdateFlow(c *gin.Context) {
 func HandleDeleteFlow(c *gin.Context) {
 	id := c.Param("id")
 	// Clean up steps first (optional if cascade is set, but safter here)
-	repository.DB.Where("flow_id = ?", id).Delete(&models.FlowStep{})
+	repository.DB.WithContext(c.Request.Context()).Where("flow_id = ?", id).Delete(&models.FlowStep{})
 
-	if err := repository.DB.Delete(&models.Flow{}, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Delete(&models.Flow{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete flow"})
 		return
 	}

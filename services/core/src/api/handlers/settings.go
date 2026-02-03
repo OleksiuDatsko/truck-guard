@@ -12,7 +12,7 @@ import (
 
 func HandleListSettings(c *gin.Context) {
 	var settings []models.SystemSetting
-	if err := repository.DB.Find(&settings).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Find(&settings).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch settings"})
 		return
 	}
@@ -27,16 +27,16 @@ func HandleUpdateSetting(c *gin.Context) {
 	}
 
 	var setting models.SystemSetting
-	if err := repository.DB.Where("key = ?", input.Key).First(&setting).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Where("key = ?", input.Key).First(&setting).Error; err != nil {
 		// Create if not exists
 		setting = input
-		if err := repository.DB.Create(&setting).Error; err != nil {
+		if err := repository.DB.WithContext(c.Request.Context()).Create(&setting).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create setting"})
 			return
 		}
 	} else {
 		setting.Value = input.Value
-		if err := repository.DB.Save(&setting).Error; err != nil {
+		if err := repository.DB.WithContext(c.Request.Context()).Save(&setting).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update setting"})
 			return
 		}
@@ -49,7 +49,7 @@ func HandleUpdateSetting(c *gin.Context) {
 
 func HandleListExcludedPlates(c *gin.Context) {
 	var plates []models.ExcludedPlate
-	if err := repository.DB.Find(&plates).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Find(&plates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch excluded plates"})
 		return
 	}
@@ -63,7 +63,7 @@ func HandleCreateExcludedPlate(c *gin.Context) {
 		return
 	}
 
-	if err := repository.DB.Create(&input).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add plate to ignore list"})
 		return
 	}
@@ -73,7 +73,7 @@ func HandleCreateExcludedPlate(c *gin.Context) {
 
 func HandleDeleteExcludedPlate(c *gin.Context) {
 	id := c.Param("id")
-	if err := repository.DB.Delete(&models.ExcludedPlate{}, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Delete(&models.ExcludedPlate{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove plate"})
 		return
 	}

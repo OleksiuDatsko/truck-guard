@@ -5,11 +5,15 @@ from src.config import cfg
 from src.clients.core_client import CoreClient
 from src.logic.payload_parser import PayloadParser
 from src.logic.processor import EventProcessor
+from src.telemetry import init_telemetry
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("weight-adapter")
 
 def main():
+    # Initialize OpenTelemetry
+    init_telemetry("truckguard-weight-adapter")
+    
     logger.info("Starting Weight Adapter Worker...")
     
     redis = Redis.from_url(f"redis://{cfg.REDIS_ADDR}", decode_responses=True) 

@@ -69,6 +69,7 @@ services:
       - REDIS_ADDR=redis:6379
       - WORKER_SYSTEM_KEY=${WORKER_SYSTEM_KEY}
       - ADMIN_DEFAULT_PASSWORD=${ADMIN_DEFAULT_PASSWORD}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
     ports:
       - "8080:8080"
     volumes:
@@ -91,6 +92,7 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - BUCKET_NAME=${MINIO_BUCKET_NAME}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
     ports:
       - "8082:8080"
     volumes:
@@ -109,6 +111,7 @@ services:
       - REDIS_ADDR=redis:6379
       - PORT=8080
       - AUTH_SERVICE_URL=http://gateway/auth
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
     ports:
       - "8081:8080"
     volumes:
@@ -129,6 +132,7 @@ services:
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - WORKER_API_KEY=${WORKER_SYSTEM_KEY}
       - PYTHONUNBUFFERED=1
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
     depends_on:
       - redis
       - core
@@ -146,25 +150,26 @@ services:
       - REDIS_ADDR=redis:6379
       - WORKER_API_KEY=${WORKER_SYSTEM_KEY}
       - PYTHONUNBUFFERED=1
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
     depends_on:
       - redis
       - core
     volumes:
       - ./services/weight-adapter:/app
 
-  anpr:
-    build:
-      context: ./services/anpr
-      dockerfile: Dockerfile.dev
-    restart: unless-stopped
-    environment:
-      - TORCH_FORCE_WEIGHTS_ONLY_LOAD=0
-      - PYTHONUNBUFFERED=1
-    ports:
-      - "8000:8000"
-    volumes:
-      - nomeroff_models_cache:/root/.nomeroff_net
-      - ./services/anpr:/app
+  # anpr:
+  #   build:
+  #     context: ./services/anpr
+  #     dockerfile: Dockerfile.dev
+  #   restart: unless-stopped
+  #   environment:
+  #     - TORCH_FORCE_WEIGHTS_ONLY_LOAD=0
+  #     - PYTHONUNBUFFERED=1
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - nomeroff_models_cache:/root/.nomeroff_net
+  #     - ./services/anpr:/app
 
   redis:
     image: redis:7-alpine
@@ -226,6 +231,16 @@ services:
         fi;
         exit 0;
       "
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-config.yaml"]
+    volumes:
+      - ./infra/otel/otel-config.yaml:/etc/otel-config.yaml
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+      - "8889:8889" # Prometheus Exporter
 
 volumes:
   postgres_data:

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"github.com/truckguard/core/src/models"
 	"github.com/truckguard/core/src/repository"
 	"github.com/truckguard/core/src/utils"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func HandlePlateEvent(c *gin.Context) {
@@ -27,12 +29,13 @@ func HandlePlateEvent(c *gin.Context) {
 		event.SystemEventID = sysEventID.(uint)
 	}
 
-	if err := repository.DB.Create(&event).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&event).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save event"})
 		return
 	}
 
-	go logic.MatchPlateEvent(&event)
+	detachCtx := trace.ContextWithSpan(context.Background(), trace.SpanFromContext(c.Request.Context()))
+	go logic.MatchPlateEvent(detachCtx, &event)
 
 	c.JSON(http.StatusAccepted, gin.H{"status": "processing", "id": event.ID})
 }
@@ -47,7 +50,7 @@ func HandlePatchPlateEvent(c *gin.Context) {
 		return
 	}
 	var event models.RawPlateEvent
-	if err := repository.DB.First(&event, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&event, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
 		return
 	}
@@ -58,7 +61,7 @@ func HandlePatchPlateEvent(c *gin.Context) {
 	}
 
 	userID := c.GetHeader("X-User-ID")
-	if err := repository.DB.Model(&models.RawPlateEvent{}).Where("id = ?", id).Updates(map[string]interface{}{
+	if err := repository.DB.WithContext(c.Request.Context()).Model(&models.RawPlateEvent{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"plate_corrected": input.PlateCorrected,
 		"corrected_by":    userID,
 		"is_manual":       true,
@@ -68,7 +71,7 @@ func HandlePatchPlateEvent(c *gin.Context) {
 	}
 
 	var permits []models.Permit
-	err := repository.DB.Joins("JOIN permit_plate_events ON permit_plate_events.permit_id = permits.id").
+	err := repository.DB.WithContext(c.Request.Context()).Joins("JOIN permit_plate_events ON permit_plate_events.permit_id = permits.id").
 		Where("permit_plate_events.raw_plate_event_id = ?", id).
 		Find(&permits).Error
 
@@ -84,7 +87,7 @@ func HandlePatchPlateEvent(c *gin.Context) {
 				updated = true
 			}
 			if updated {
-				repository.DB.Save(&permit)
+				repository.DB.WithContext(c.Request.Context()).Save(&permit)
 			}
 		}
 	}
@@ -96,7 +99,7 @@ func HandleGetPlateEvents(c *gin.Context) {
 	var total int64
 	limit, offset, page := utils.GetPagination(c)
 
-	query := repository.DB.Model(&models.RawPlateEvent{})
+	query := repository.DB.WithContext(c.Request.Context()).Model(&models.RawPlateEvent{})
 
 	if plate := c.Query("plate"); plate != "" {
 		query = query.Where("plate LIKE ?", "%"+plate+"%")
@@ -120,7 +123,7 @@ func HandleGetPlateEvents(c *gin.Context) {
 func HandleGetPlateEventByID(c *gin.Context) {
 	id := c.Param("id")
 	var event models.RawPlateEvent
-	if err := repository.DB.First(&event, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&event, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
 		return
 	}
@@ -133,7 +136,7 @@ func HandleGetPlateEventByID(c *gin.Context) {
 
 	if event.CorrectedBy != "" {
 		var user models.User
-		if err := repository.DB.Where("auth_id = ?", event.CorrectedBy).First(&user).Error; err == nil {
+		if err := repository.DB.WithContext(c.Request.Context()).Where("auth_id = ?", event.CorrectedBy).First(&user).Error; err == nil {
 			name := strings.TrimSpace(fmt.Sprintf("%s %s", user.FirstName, user.LastName))
 			if name == "" {
 				name = fmt.Sprintf("User #%d", user.AuthID)
@@ -158,12 +161,13 @@ func HandleWeightEvent(c *gin.Context) {
 		event.SystemEventID = sysEventID.(uint)
 	}
 
-	if err := repository.DB.Create(&event).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&event).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record weight"})
 		return
 	}
 
-	go logic.MatchWeightEvent(&event)
+	detachCtx := trace.ContextWithSpan(context.Background(), trace.SpanFromContext(c.Request.Context()))
+	go logic.MatchWeightEvent(detachCtx, &event)
 
 	c.JSON(http.StatusAccepted, gin.H{"status": "weight_recorded", "id": event.ID})
 }
@@ -173,7 +177,7 @@ func HandleGetWeightEvents(c *gin.Context) {
 	var total int64
 	limit, offset, page := utils.GetPagination(c)
 
-	query := repository.DB.Model(&models.RawWeightEvent{})
+	query := repository.DB.WithContext(c.Request.Context()).Model(&models.RawWeightEvent{})
 
 	if from := c.Query("from"); from != "" {
 		query = query.Where("created_at >= ?", from)
@@ -194,7 +198,7 @@ func HandleGetWeightEvents(c *gin.Context) {
 func HandleGetWeightEventByID(c *gin.Context) {
 	id := c.Param("id")
 	var event models.RawWeightEvent
-	if err := repository.DB.First(&event, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&event, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Weight event not found"})
 		return
 	}
@@ -206,7 +210,7 @@ func HandleGetSystemEvents(c *gin.Context) {
 	var total int64
 	limit, offset, page := utils.GetPagination(c)
 
-	query := repository.DB.Model(&models.SystemEvent{})
+	query := repository.DB.WithContext(c.Request.Context()).Model(&models.SystemEvent{})
 
 	if eventType := c.Query("type"); eventType != "" {
 		query = query.Where("type = ?", eventType)
@@ -230,7 +234,7 @@ func HandleGetSystemEvents(c *gin.Context) {
 func HandleGetSystemEventByID(c *gin.Context) {
 	id := c.Param("id")
 	var event models.SystemEvent
-	if err := repository.DB.First(&event, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&event, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "System event not found"})
 		return
 	}
@@ -242,7 +246,7 @@ func HandleGetGateEvents(c *gin.Context) {
 	var total int64
 	limit, offset, page := utils.GetPagination(c)
 
-	query := repository.DB.Model(&models.GateEvent{})
+	query := repository.DB.WithContext(c.Request.Context()).Model(&models.GateEvent{})
 
 	if gate := c.Query("gate"); gate != "" {
 		query = query.Where("gate_id = ?", gate)
@@ -269,7 +273,7 @@ func HandleGetGateEvents(c *gin.Context) {
 func HandleGetGateEventByID(c *gin.Context) {
 	id := c.Param("id")
 	var event models.GateEvent
-	if err := repository.DB.Preload("Gate").Preload("WeightEvents").Preload("PlateEvents").First(&event, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Preload("Gate").Preload("WeightEvents").Preload("PlateEvents").First(&event, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Gate event not found"})
 		return
 	}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/truckguard/core/src/models"
+	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -15,6 +16,10 @@ func InitDB(dsn string) {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("Failed to connect to Core Database")
+	}
+
+	if err := db.Use(otelgorm.NewPlugin()); err != nil {
+		panic(err)
 	}
 
 	db.AutoMigrate(

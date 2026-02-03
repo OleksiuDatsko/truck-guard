@@ -16,7 +16,7 @@ func HandleListVehicleTypes(c *gin.Context) {
 	code := c.Query("code")
 	name := c.Query("name")
 
-	query := repository.DB.Model(&models.VehicleType{})
+	query := repository.DB.WithContext(c.Request.Context()).Model(&models.VehicleType{})
 	if code != "" {
 		query = query.Where("code ILIKE ?", "%"+code+"%")
 	}
@@ -36,7 +36,7 @@ func HandleCreateVehicleType(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := repository.DB.Create(&input).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create vehicle type"})
 		return
 	}
@@ -46,7 +46,7 @@ func HandleCreateVehicleType(c *gin.Context) {
 func HandleUpdateVehicleType(c *gin.Context) {
 	id := c.Param("id")
 	var vehicleType models.VehicleType
-	if err := repository.DB.First(&vehicleType, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&vehicleType, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Vehicle type not found"})
 		return
 	}
@@ -63,13 +63,13 @@ func HandleUpdateVehicleType(c *gin.Context) {
 	vehicleType.DailyPrice = input.DailyPrice
 	vehicleType.Color = input.Color
 
-	repository.DB.Save(&vehicleType)
+	repository.DB.WithContext(c.Request.Context()).Save(&vehicleType)
 	c.JSON(http.StatusOK, vehicleType)
 }
 
 func HandleDeleteVehicleType(c *gin.Context) {
 	id := c.Param("id")
-	if err := repository.DB.Delete(&models.VehicleType{}, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Delete(&models.VehicleType{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete"})
 		return
 	}

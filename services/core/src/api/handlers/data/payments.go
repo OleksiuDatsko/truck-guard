@@ -16,7 +16,7 @@ func HandleListPaymentTypes(c *gin.Context) {
 	code := c.Query("code")
 	isActive := c.Query("is_active")
 
-	query := repository.DB.Model(&models.PaymentType{})
+	query := repository.DB.WithContext(c.Request.Context()).Model(&models.PaymentType{})
 	if code != "" {
 		query = query.Where("code ILIKE ?", "%"+code+"%")
 	}
@@ -36,7 +36,7 @@ func HandleCreatePaymentType(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := repository.DB.Create(&input).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create payment type"})
 		return
 	}
@@ -46,7 +46,7 @@ func HandleCreatePaymentType(c *gin.Context) {
 func HandleUpdatePaymentType(c *gin.Context) {
 	id := c.Param("id")
 	var paymentType models.PaymentType
-	if err := repository.DB.First(&paymentType, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&paymentType, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Payment type not found"})
 		return
 	}
@@ -62,13 +62,13 @@ func HandleUpdatePaymentType(c *gin.Context) {
 	paymentType.IsActive = input.IsActive
 	paymentType.Icon = input.Icon
 
-	repository.DB.Save(&paymentType)
+	repository.DB.WithContext(c.Request.Context()).Save(&paymentType)
 	c.JSON(http.StatusOK, paymentType)
 }
 
 func HandleDeletePaymentType(c *gin.Context) {
 	id := c.Param("id")
-	if err := repository.DB.Delete(&models.PaymentType{}, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Delete(&models.PaymentType{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete"})
 		return
 	}

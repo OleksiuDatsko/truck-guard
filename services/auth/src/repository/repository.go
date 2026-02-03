@@ -11,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"github.com/truckguard/auth/src/models"
+	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -27,6 +28,11 @@ func InitDB(dsn string) {
 	if err != nil {
 		panic("Failed to connect to Auth Database")
 	}
+
+	if err := db.Use(otelgorm.NewPlugin()); err != nil {
+		panic(err)
+	}
+
 	DB = db
 	DB.AutoMigrate(&models.Permission{}, &models.Role{}, &models.User{}, &models.APIKey{})
 }

@@ -33,10 +33,10 @@ func HandleRegister(c *gin.Context) {
 	if roleName == "" {
 		roleName = "operator"
 	}
-	repository.DB.Where("name = ?", roleName).First(&role)
+	repository.DB.WithContext(c.Request.Context()).Where("name = ?", roleName).First(&role)
 
 	u := models.User{Username: b.User, PasswordHash: string(h), RoleID: role.ID}
-	if err := repository.DB.Preload("Role").Preload("Role.Permissions").Create(&u).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Preload("Role").Preload("Role.Permissions").Create(&u).Error; err != nil {
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 			c.JSON(409, gin.H{"error": "User already exists"})
 			return
@@ -59,7 +59,7 @@ func HandleLogin(c *gin.Context) {
 	}
 
 	var u models.User
-	if err := repository.DB.Preload("Role.Permissions").Where("username = ?", b.User).First(&u).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Preload("Role.Permissions").Where("username = ?", b.User).First(&u).Error; err != nil {
 		c.Status(401)
 		return
 	}
@@ -71,7 +71,7 @@ func HandleLogin(c *gin.Context) {
 
 	now := time.Now()
 	u.LastLogin = &now
-	repository.DB.Save(&u)
+	repository.DB.WithContext(c.Request.Context()).Save(&u)
 
 	t, _ := repository.GenerateToken(u)
 	c.JSON(200, gin.H{"token": t})
@@ -131,7 +131,7 @@ func HandleValidate(c *gin.Context) {
 
 func HandleListPermissions(c *gin.Context) {
 	var perms []models.Permission
-	repository.DB.Find(&perms)
+	repository.DB.WithContext(c.Request.Context()).Find(&perms)
 	c.JSON(200, perms)
 }
 
@@ -146,7 +146,7 @@ func HandleCreateRole(c *gin.Context) {
 	}
 
 	role := models.Role{Name: b.Name, Description: b.Description}
-	if err := repository.DB.Create(&role).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&role).Error; err != nil {
 		c.JSON(500, gin.H{"error": "Role already exists or DB error"})
 		return
 	}
@@ -164,21 +164,21 @@ func HandleAssignPermissionsToRole(c *gin.Context) {
 	}
 
 	var role models.Role
-	if err := repository.DB.First(&role, roleID).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&role, roleID).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Role not found"})
 		return
 	}
 
 	var perms []models.Permission
-	repository.DB.Where("id IN ?", b.PermissionIDs).Find(&perms)
+	repository.DB.WithContext(c.Request.Context()).Where("id IN ?", b.PermissionIDs).Find(&perms)
 
-	if err := repository.DB.Model(&role).Association("Permissions").Replace(perms); err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Model(&role).Association("Permissions").Replace(perms); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
 	var userIDs []uint
-	repository.DB.Model(&models.User{}).Where("role_id = ?", role.ID).Pluck("id", &userIDs)
+	repository.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("role_id = ?", role.ID).Pluck("id", &userIDs)
 	for _, id := range userIDs {
 		repository.InvalidateUserCache(id)
 	}
@@ -196,7 +196,7 @@ func HandleUpdateUserRole(c *gin.Context) {
 		return
 	}
 
-	repository.DB.Model(&models.User{}).Where("id = ?", userIDStr).Update("role_id", b.RoleID)
+	repository.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("id = ?", userIDStr).Update("role_id", b.RoleID)
 
 	var id uint
 	fmt.Sscanf(userIDStr, "%d", &id)
@@ -207,7 +207,7 @@ func HandleUpdateUserRole(c *gin.Context) {
 
 func HandleListKeys(c *gin.Context) {
 	var keys []models.APIKey
-	repository.DB.Preload("Permissions").Find(&keys)
+	repository.DB.WithContext(c.Request.Context()).Preload("Permissions").Find(&keys)
 	c.JSON(200, keys)
 }
 
@@ -226,7 +226,7 @@ func HandleCreateKeyWithPerms(c *gin.Context) {
 	rk := hex.EncodeToString(rb)
 
 	var perms []models.Permission
-	repository.DB.Where("id IN ?", b.PermissionIDs).Find(&perms)
+	repository.DB.WithContext(c.Request.Context()).Where("id IN ?", b.PermissionIDs).Find(&perms)
 
 	key := models.APIKey{
 		KeyHash:     repository.HashKey(rk),
@@ -234,7 +234,7 @@ func HandleCreateKeyWithPerms(c *gin.Context) {
 		Permissions: perms,
 	}
 
-	if err := repository.DB.Create(&key).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&key).Error; err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
@@ -252,12 +252,12 @@ func HandleUpdateKeyStatus(c *gin.Context) {
 	}
 
 	var key models.APIKey
-	if err := repository.DB.First(&key, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&key, id).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Key not found"})
 		return
 	}
 
-	repository.DB.Model(&key).Update("is_active", b.IsActive)
+	repository.DB.WithContext(c.Request.Context()).Model(&key).Update("is_active", b.IsActive)
 
 	repository.RDB.Del(context.Background(), "auth:"+key.KeyHash)
 
@@ -275,15 +275,15 @@ func HandleAssignPermissionsToKey(c *gin.Context) {
 	}
 
 	var key models.APIKey
-	if err := repository.DB.First(&key, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&key, id).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Key not found"})
 		return
 	}
 
 	var perms []models.Permission
-	repository.DB.Where("id IN ?", b.PermissionIDs).Find(&perms)
+	repository.DB.WithContext(c.Request.Context()).Where("id IN ?", b.PermissionIDs).Find(&perms)
 
-	repository.DB.Model(&key).Association("Permissions").Replace(perms)
+	repository.DB.WithContext(c.Request.Context()).Model(&key).Association("Permissions").Replace(perms)
 
 	repository.RDB.Del(context.Background(), "auth:"+key.KeyHash)
 
@@ -302,12 +302,12 @@ func HandleUpdateKey(c *gin.Context) {
 	}
 
 	var key models.APIKey
-	if err := repository.DB.First(&key, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&key, id).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Key not found"})
 		return
 	}
 
-	repository.DB.Model(&key).Updates(map[string]interface{}{
+	repository.DB.WithContext(c.Request.Context()).Model(&key).Updates(map[string]interface{}{
 		"owner_name": b.OwnerName,
 		"is_active":  b.IsActive,
 	})
@@ -320,15 +320,15 @@ func HandleUpdateKey(c *gin.Context) {
 func HandleDeleteKey(c *gin.Context) {
 	id := c.Param("id")
 	var key models.APIKey
-	if err := repository.DB.First(&key, id).Error; err == nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&key, id).Error; err == nil {
 		repository.RDB.Del(context.Background(), "auth:"+key.KeyHash)
 
-		if err := repository.DB.Model(&key).Association("Permissions").Clear(); err != nil {
+		if err := repository.DB.WithContext(c.Request.Context()).Model(&key).Association("Permissions").Clear(); err != nil {
 			c.JSON(500, gin.H{"error": "Failed to clear permissions: " + err.Error()})
 			return
 		}
 
-		if err := repository.DB.Delete(&key).Error; err != nil {
+		if err := repository.DB.WithContext(c.Request.Context()).Delete(&key).Error; err != nil {
 			c.JSON(500, gin.H{"error": "Failed to delete key: " + err.Error()})
 			return
 		}
@@ -341,16 +341,16 @@ func HandleDeleteKey(c *gin.Context) {
 
 func HandleListUsers(c *gin.Context) {
 	var users []models.User
-	repository.DB.Preload("Role").Find(&users)
+	repository.DB.WithContext(c.Request.Context()).Preload("Role").Find(&users)
 	c.JSON(200, users)
 }
 
 func HandleDeleteUser(c *gin.Context) {
 	id := c.Param("id")
 	var user models.User
-	if err := repository.DB.First(&user, id).Error; err == nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&user, id).Error; err == nil {
 		repository.InvalidateUserCache(user.ID)
-		repository.DB.Delete(&user)
+		repository.DB.WithContext(c.Request.Context()).Delete(&user)
 		c.Status(204)
 		return
 	}
@@ -360,7 +360,7 @@ func HandleDeleteUser(c *gin.Context) {
 func HandleGetUser(c *gin.Context) {
 	id := c.Param("id")
 	var user models.User
-	if err := repository.DB.Preload("Role").First(&user, id).Error; err == nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Preload("Role").First(&user, id).Error; err == nil {
 		c.JSON(200, user)
 		return
 	}
@@ -369,7 +369,7 @@ func HandleGetUser(c *gin.Context) {
 
 func HandleListRoles(c *gin.Context) {
 	var roles []models.Role
-	repository.DB.Preload("Permissions").Find(&roles)
+	repository.DB.WithContext(c.Request.Context()).Preload("Permissions").Find(&roles)
 	c.JSON(200, roles)
 }
 
@@ -383,20 +383,20 @@ func HandleUpdateRole(c *gin.Context) {
 		c.Status(400)
 		return
 	}
-	repository.DB.Model(&models.Role{}).Where("id = ?", id).Updates(models.Role{Name: b.Name, Description: b.Description})
+	repository.DB.WithContext(c.Request.Context()).Model(&models.Role{}).Where("id = ?", id).Updates(models.Role{Name: b.Name, Description: b.Description})
 	c.Status(200)
 }
 
 func HandleDeleteRole(c *gin.Context) {
 	id := c.Param("id")
 	var count int64
-	repository.DB.Model(&models.User{}).Where("role_id = ?", id).Count(&count)
+	repository.DB.WithContext(c.Request.Context()).Model(&models.User{}).Where("role_id = ?", id).Count(&count)
 
 	if count > 0 {
 		c.JSON(400, gin.H{"error": "Cannot delete role: users are still assigned to it"})
 		return
 	}
 
-	repository.DB.Delete(&models.Role{}, id)
+	repository.DB.WithContext(c.Request.Context()).Delete(&models.Role{}, id)
 	c.Status(204)
 }

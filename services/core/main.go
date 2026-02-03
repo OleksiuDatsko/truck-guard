@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"log/slog"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -8,14 +10,27 @@ import (
 	"github.com/truckguard/core/src/api/handlers/data"
 	"github.com/truckguard/core/src/api/middleware"
 	"github.com/truckguard/core/src/models"
+	"github.com/truckguard/core/src/pkg/telemetry"
 	"github.com/truckguard/core/src/repository"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 func main() {
+	logger := telemetry.NewLogger("truckguard-core")
+	slog.SetDefault(logger)
+	if err := telemetry.Init("truckguard-core"); err != nil {
+		logger.Error("otel init failed", "error", err)
+		os.Exit(1)
+	}
+	defer telemetry.Shutdown(context.Background())
+
 	repository.InitDB(os.Getenv("DATABASE_URL"))
 	repository.InitRedis(os.Getenv("REDIS_ADDR"))
 
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(otelgin.Middleware("truckguard-core"))
+	r.Use(middleware.Logger())
 
 	r.Match([]string{"GET", "HEAD"}, "/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})

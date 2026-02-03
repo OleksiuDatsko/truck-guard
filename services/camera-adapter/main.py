@@ -7,8 +7,12 @@ from src.logic.payload_parser import PayloadParser
 from src.logic.processor import EventProcessor
 from src.clients.minio_client import MinioStorage
 from src.clients.anpr_client import ANPRClient
+from src.telemetry import init_telemetry
 
 def main():
+    # Initialize OpenTelemetry
+    init_telemetry("truckguard-camera-adapter")
+    
     logger.info("Starting Adapter Worker...")
     
     redis = Redis.from_url(f"redis://{cfg.REDIS_ADDR}", decode_responses=True) 

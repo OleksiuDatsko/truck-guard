@@ -16,7 +16,7 @@ func HandleListCompanies(c *gin.Context) {
 	name := c.Query("name")
 	edrpou := c.Query("edrpou")
 
-	query := repository.DB.Model(&models.Company{})
+	query := repository.DB.WithContext(c.Request.Context()).Model(&models.Company{})
 	if name != "" {
 		query = query.Where("name ILIKE ?", "%"+name+"%")
 	}
@@ -36,7 +36,7 @@ func HandleCreateCompany(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := repository.DB.Create(&input).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&input).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create company"})
 		return
 	}
@@ -46,7 +46,7 @@ func HandleCreateCompany(c *gin.Context) {
 func HandleUpdateCompany(c *gin.Context) {
 	id := c.Param("id")
 	var company models.Company
-	if err := repository.DB.First(&company, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&company, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Company not found"})
 		return
 	}
@@ -60,13 +60,13 @@ func HandleUpdateCompany(c *gin.Context) {
 	company.EDRPOU = input.EDRPOU
 	company.Details = input.Details
 
-	repository.DB.Save(&company)
+	repository.DB.WithContext(c.Request.Context()).Save(&company)
 	c.JSON(http.StatusOK, company)
 }
 
 func HandleDeleteCompany(c *gin.Context) {
 	id := c.Param("id")
-	if err := repository.DB.Delete(&models.Company{}, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Delete(&models.Company{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete"})
 		return
 	}

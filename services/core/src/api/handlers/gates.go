@@ -16,7 +16,7 @@ func HandleCreateGate(c *gin.Context) {
 		return
 	}
 
-	if err := repository.DB.Create(&gate).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Create(&gate).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create gate"})
 		return
 	}
@@ -29,8 +29,8 @@ func HandleGetGates(c *gin.Context) {
 	var total int64
 	limit, offset, page := utils.GetPagination(c)
 
-	repository.DB.Model(&models.Gate{}).Count(&total)
-	repository.DB.Limit(limit).Offset(offset).Find(&gates)
+	repository.DB.WithContext(c.Request.Context()).Model(&models.Gate{}).Count(&total)
+	repository.DB.WithContext(c.Request.Context()).Limit(limit).Offset(offset).Find(&gates)
 
 	utils.SendPaginatedResponse(c, gates, total, page, limit)
 }
@@ -38,7 +38,7 @@ func HandleGetGates(c *gin.Context) {
 func HandleGetGateByID(c *gin.Context) {
 	id := c.Param("id")
 	var gate models.Gate
-	if err := repository.DB.First(&gate, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&gate, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Gate not found"})
 		return
 	}
@@ -48,7 +48,7 @@ func HandleGetGateByID(c *gin.Context) {
 func HandleUpdateGate(c *gin.Context) {
 	id := c.Param("id")
 	var gate models.Gate
-	if err := repository.DB.First(&gate, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).First(&gate, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Gate not found"})
 		return
 	}
@@ -58,7 +58,7 @@ func HandleUpdateGate(c *gin.Context) {
 		return
 	}
 
-	if err := repository.DB.Save(&gate).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Save(&gate).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update gate"})
 		return
 	}
@@ -68,6 +68,6 @@ func HandleUpdateGate(c *gin.Context) {
 
 func HandleDeleteGate(c *gin.Context) {
 	id := c.Param("id")
-	repository.DB.Delete(&models.Gate{}, id)
+	repository.DB.WithContext(c.Request.Context()).Delete(&models.Gate{}, id)
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }
