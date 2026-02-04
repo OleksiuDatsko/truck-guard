@@ -19,5 +19,5 @@ class PayloadParser:
             
             return str(data) if data else None
         except Exception as e:
-            logger.warning(f"Failed to parse payload: {e}")
+            logger.warning("Failed to parse payload", extra={"error": str(e), "format": format_type})
             return None

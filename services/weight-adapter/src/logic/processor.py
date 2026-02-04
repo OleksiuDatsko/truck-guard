@@ -1,8 +1,5 @@
 import json
-import logging
-
-logger = logging.getLogger("weight-adapter")
-logging.basicConfig(level=logging.INFO)
+from src.utils.logging_utils import logger
 
 class EventProcessor:
     def __init__(self, core_client, parser):
@@ -23,9 +20,9 @@ class EventProcessor:
         source_id = data.get("source_id")
 
         config = self._get_cached_config(source_id)
-        logger.info(f"Config for scale {source_id}: {config}")
+        logger.debug("Scale config retrieved", extra={"source_id": source_id, "config": config})
         if not config:
-            logger.error(f"Config not found for scale {source_id}")
+            logger.error("Config not found for scale", extra={"source_id": source_id})
             return
 
         mapping = config.get("field_mapping", {})
@@ -39,16 +36,20 @@ class EventProcessor:
         if weight is not None:
             final_event = {
                 "scale_source_id": source_id,
-                "scale_id": f"{config.get("ID")}",
+                "scale_id": f"{config.get('ID')}",
                 "weight": weight,
                 "timestamp": data.get("at"),
                 "raw_payload": data.get("payload"),
             }
             try:
                 self.core.send_weight_event(final_event)
-                logger.info(f"Processed weight for {source_id}: {weight} kg {final_event}")
+                logger.info("Processed weight successfully", extra={
+                    "source_id": source_id,
+                    "weight": weight,
+                    "scale_id": final_event["scale_id"]
+                })
             except Exception as e:
-                logger.error(f"Failed to send weight event to Core: {e}")
+                logger.error("Failed to send weight event to Core", extra={"error": str(e)})
                 raise e
         else:
-            logger.warning(f"Could not extract weight for {source_id}")
+            logger.warning("Could not extract weight", extra={"source_id": source_id})

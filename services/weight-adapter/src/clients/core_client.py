@@ -1,5 +1,6 @@
 import requests
 from src.config import cfg
+from src.utils.logging_utils import logger
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 class CoreClient:
@@ -14,8 +15,8 @@ class CoreClient:
             resp = requests.get(url, headers=self.headers, timeout=5)
             if resp.status_code == 200:
                 return resp.json()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("Error fetching scale config", extra={"source_id": source_id, "error": str(e)})
         return None
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=2, max=10))

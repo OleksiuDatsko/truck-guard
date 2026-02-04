@@ -17,13 +17,13 @@ class JsonFormatter(logging.Formatter):
             "logger": record.name,
         }
 
-        # Include OTel context if available (injected by opentelemetry-instrumentation-logging)
+        # Include OTel context if available
         if hasattr(record, "otelTraceID"):
             log_record["trace_id"] = record.otelTraceID
         if hasattr(record, "otelSpanID"):
             log_record["span_id"] = record.otelSpanID
 
-        # Add extra fields but filter out standard ones
+        # Add extra fields
         standard_attrs = {
             "name", "msg", "args", "levelname", "levelno", "pathname", "filename",
             "module", "exc_info", "exc_text", "stack_info", "lineno", "funcName",
@@ -46,7 +46,6 @@ class JsonFormatter(logging.Formatter):
         return dt.isoformat() + "Z"
 
 def setup_logging(service_name="truckguard-worker"):
-    # Clear existing handlers from root logger to avoid duplicates
     root = logging.getLogger()
     if root.hasHandlers():
         for handler in root.handlers[:]:
@@ -59,4 +58,4 @@ def setup_logging(service_name="truckguard-worker"):
     
     return logging.getLogger(service_name)
 
-logger = setup_logging("truckguard-camera-adapter")
+logger = setup_logging("truckguard-weight-adapter")

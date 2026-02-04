@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"log/slog"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/truckguard/auth/src/models"
@@ -38,13 +40,16 @@ func HandleRegister(c *gin.Context) {
 	u := models.User{Username: b.User, PasswordHash: string(h), RoleID: role.ID}
 	if err := repository.DB.WithContext(c.Request.Context()).Preload("Role").Preload("Role.Permissions").Create(&u).Error; err != nil {
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			slog.Warn("Registration failed: user already exists", "username", b.User)
 			c.JSON(409, gin.H{"error": "User already exists"})
 			return
 		}
+		slog.Error("Registration failed", "username", b.User, "error", err)
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
+	slog.Info("User registered", "username", u.Username, "role", roleName)
 	c.JSON(201, u)
 }
 
@@ -60,11 +65,13 @@ func HandleLogin(c *gin.Context) {
 
 	var u models.User
 	if err := repository.DB.WithContext(c.Request.Context()).Preload("Role.Permissions").Where("username = ?", b.User).First(&u).Error; err != nil {
+		slog.Warn("Login failed: user not found", "username", b.User)
 		c.Status(401)
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(b.Pass)); err != nil {
+		slog.Warn("Login failed: invalid password", "username", b.User)
 		c.Status(401)
 		return
 	}
@@ -74,6 +81,7 @@ func HandleLogin(c *gin.Context) {
 	repository.DB.WithContext(c.Request.Context()).Save(&u)
 
 	t, _ := repository.GenerateToken(u)
+	slog.Info("User logged in", "username", u.Username, "user_id", u.ID)
 	c.JSON(200, gin.H{"token": t})
 }
 
@@ -81,12 +89,14 @@ func HandleValidate(c *gin.Context) {
 	k := c.GetHeader("X-API-Key")
 	if k != "" {
 		if meta, valid := repository.ValidateKeyAndGetMetadata(k); valid {
+			slog.Debug("Validating API Key", "key_id", meta.ID, "source", meta.Name)
 			c.Header("X-Source-ID", meta.ID)
 			c.Header("X-Source-Name", meta.Name)
 			c.Header("X-Permissions", strings.Join(meta.Permissions, ","))
 			c.Status(200)
 			return
 		}
+		slog.Warn("Invalid API Key attempted", "key_prefix", k[:4]+"...")
 	}
 
 	var tokenString string

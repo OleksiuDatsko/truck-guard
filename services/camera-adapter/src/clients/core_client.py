@@ -17,7 +17,7 @@ class CoreClient:
             if resp.status_code == 200:
                 return resp.json()
         except Exception as e:
-            logger.error(f"Error fetching config for {source_id}: {e}")
+            logger.error("Error fetching config", extra={"source_id": source_id, "error": str(e)})
         return None
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=2, max=10))

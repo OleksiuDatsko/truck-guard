@@ -7,8 +7,7 @@ from src.logic.payload_parser import PayloadParser
 from src.logic.processor import EventProcessor
 from src.telemetry import init_telemetry
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("weight-adapter")
+from src.utils.logging_utils import logger
 
 def main():
     # Initialize OpenTelemetry

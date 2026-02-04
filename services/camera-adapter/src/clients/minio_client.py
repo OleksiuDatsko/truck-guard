@@ -21,5 +21,5 @@ class MinioStorage:
             response.release_conn()
             return data
         except Exception as e:
-            logger.error(f"MinIO error for {image_key}: {e}")
+            logger.error("MinIO error", extra={"image_key": image_key, "error": str(e)})
             raise

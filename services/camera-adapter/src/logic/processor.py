@@ -43,13 +43,13 @@ class EventProcessor:
                 if suggestions and not plate:
                     plate = suggestions[0]["plate"]
             except Exception as e:
-                logger.error(f"AI Recognition failed: {e}")
+                logger.error("AI Recognition failed", extra={"error": str(e), "image_key": image_key})
 
         if plate:
             final_event = {
                 "camera_source_id": source_id,
                 "camera_source_name": config.get("name", source_id),
-                "camera_id": f"{config.get("ID")}",
+                "camera_id": f"{config.get('ID')}",
                 "plate": plate.upper().replace(" ", ""),
                 "suggestions": json.dumps(suggestions), 
                 "image_key": image_key,
@@ -57,4 +57,8 @@ class EventProcessor:
                 "raw_payload": data.get("payload"),
             }
             self.core.send_event(final_event)
-            logger.info(f"Successfully processed plate: {final_event}")
+            logger.info("Successfully processed plate", extra={
+                "plate": final_event["plate"],
+                "source": final_event["camera_source_name"],
+                "camera_id": final_event["camera_id"]
+            })

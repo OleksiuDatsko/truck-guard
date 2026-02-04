@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"log/slog"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"github.com/truckguard/auth/src/models"
@@ -61,6 +63,7 @@ func ValidateKeyAndGetMetadata(key string) (models.SourceMetadata, bool) {
 	h := HashKey(key)
 
 	if v, _ := RDB.Get(ctx, "auth:"+h).Result(); v != "" {
+		slog.Debug("API Key found in cache", "hash", h[:8])
 		var meta models.SourceMetadata
 		json.Unmarshal([]byte(v), &meta)
 		return meta, true
@@ -68,6 +71,7 @@ func ValidateKeyAndGetMetadata(key string) (models.SourceMetadata, bool) {
 
 	var ak models.APIKey
 	if err := DB.Preload("Permissions").Where("key_hash = ? AND is_active = ?", h, true).First(&ak).Error; err == nil {
+		slog.Debug("API Key validated against DB", "owner", ak.OwnerName)
 		var perms []string
 		for _, p := range ak.Permissions {
 			perms = append(perms, p.ID)
@@ -112,6 +116,7 @@ func GetUserPermissions(userID uint) []string {
 }
 
 func InvalidateUserCache(userID uint) {
+	slog.Debug("Invalidating user cache", "user_id", userID)
 	key := fmt.Sprintf("user_perms:%d", userID)
 	RDB.Del(ctx, key)
 }

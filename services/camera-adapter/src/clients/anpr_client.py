@@ -17,9 +17,9 @@ class ANPRClient:
             
             if resp.status_code == 200:
                 data = resp.json()
-                logger.info(f"ANPR response: {data}")
+                logger.info("ANPR response received", extra={"plates_count": len(data.get("plates", []))})
                 return data.get("plates", [])
             return []
         except Exception as e:
-            logger.error(f"ANPR Request failed: {e}")
+            logger.error("ANPR Request failed", extra={"error": str(e)})
             return []

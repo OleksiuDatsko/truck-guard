@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"log/slog"
+
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -51,8 +53,10 @@ func ProcessIncomingEvent(file *multipart.FileHeader, deviceID, payload, sourceI
 			},
 		})
 		if err != nil {
+			slog.Error("Failed to upload image to Minio", "bucket", BucketName, "object", objectName, "error", err)
 			return nil, err
 		}
+		slog.Debug("Image uploaded to Minio", "bucket", BucketName, "object", objectName)
 		imageKey = &objectName
 	}
 
@@ -70,6 +74,12 @@ func ProcessIncomingEvent(file *multipart.FileHeader, deviceID, payload, sourceI
 		Stream: stream,
 		Values: map[string]interface{}{"data": event.ToJSON()},
 	}).Result()
+
+	if err != nil {
+		slog.Error("Failed to add event to Redis stream", "stream", stream, "error", err)
+	} else {
+		slog.Debug("Event added to Redis stream", "stream", stream, "type", event.Type)
+	}
 
 	return &event, err
 }
