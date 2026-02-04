@@ -10,10 +10,24 @@ import (
 	"github.com/truckguard/core/src/repository"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 )
 
-var tracer = otel.Tracer("matchmaker")
+var (
+	tracer = otel.Tracer("matchmaker")
+	meter  = otel.Meter("matchmaker")
+
+	eventsMatchedCounter, _ = meter.Int64Counter("events_matched_total",
+		metric.WithDescription("Number of processed plate/weight events"),
+	)
+	permitsCreatedCounter, _ = meter.Int64Counter("permits_created_total",
+		metric.WithDescription("Number of new permits created"),
+	)
+	gateEventsCounter, _ = meter.Int64Counter("gate_events_processed_total",
+		metric.WithDescription("Number of gate events processed"),
+	)
+)
 
 func getGateDeviceCount(gateID uint) int64 {
 	var countCameras int64
@@ -54,6 +68,11 @@ func MatchPlateEvent(ctx context.Context, event *models.RawPlateEvent) {
 	event.GateEventID = &gateEventID
 	db.WithContext(ctx).Save(event)
 
+	eventsMatchedCounter.Add(ctx, 1, metric.WithAttributes(
+		attribute.String("type", "plate"),
+		attribute.String("status", "success"),
+	))
+
 	// Trigger permit processing
 	go ProcessGateEventToPermit(ctx, gateEventID)
 }
@@ -79,6 +98,11 @@ func MatchWeightEvent(ctx context.Context, event *models.RawWeightEvent) {
 
 	event.GateEventID = &gateEventID
 	db.WithContext(ctx).Save(event)
+
+	eventsMatchedCounter.Add(ctx, 1, metric.WithAttributes(
+		attribute.String("type", "weight"),
+		attribute.String("status", "success"),
+	))
 
 	// Trigger permit processing
 	go ProcessGateEventToPermit(ctx, gateEventID)
@@ -172,10 +196,16 @@ func ProcessGateEventToPermit(ctx context.Context, gateEventID uint) {
 			// Link GateEvent
 			ge.PermitID = &permit.ID
 			repository.DB.Save(&ge)
+			permitsCreatedCounter.Add(ctx, 1)
 		} else {
 			slog.Error("Failed to create permit", "best_plate", bestPlate, "error", err)
 		}
 	}
+
+	gateEventsCounter.Add(ctx, 1, metric.WithAttributes(
+		attribute.Bool("found", found),
+		attribute.Bool("is_entry", ge.Gate.IsEntry),
+	))
 
 	if !found {
 		slog.Warn("Permit not found for gate event", "gate_event_id", ge.ID, "plate_candidates", plateCandidates)

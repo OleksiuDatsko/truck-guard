@@ -9,10 +9,12 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/log"
+	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
@@ -21,6 +23,7 @@ import (
 var (
 	tracerProvider *sdktrace.TracerProvider
 	loggerProvider *log.LoggerProvider
+	meterProvider  *metric.MeterProvider
 )
 
 func Init(serviceName string) error {
@@ -74,6 +77,21 @@ func Init(serviceName string) error {
 	)
 	global.SetLoggerProvider(loggerProvider)
 
+	// Metrics
+	metricExp, err := otlpmetricgrpc.New(ctx,
+		otlpmetricgrpc.WithInsecure(),
+		otlpmetricgrpc.WithEndpoint(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")),
+	)
+	if err != nil {
+		return err
+	}
+
+	meterProvider = metric.NewMeterProvider(
+		metric.WithReader(metric.NewPeriodicReader(metricExp)),
+		metric.WithResource(res),
+	)
+	otel.SetMeterProvider(meterProvider)
+
 	slog.Info("OpenTelemetry initialized", "service", serviceName)
 	return nil
 }
@@ -87,6 +105,11 @@ func Shutdown(ctx context.Context) error {
 	}
 	if loggerProvider != nil {
 		if err := loggerProvider.Shutdown(ctx); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if meterProvider != nil {
+		if err := meterProvider.Shutdown(ctx); err != nil {
 			errs = append(errs, err)
 		}
 	}

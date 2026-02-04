@@ -13,6 +13,8 @@ import (
 	"github.com/truckguard/core/src/pkg/telemetry"
 	"github.com/truckguard/core/src/repository"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 )
 
 func main() {
@@ -31,6 +33,17 @@ func main() {
 	r.Use(gin.Recovery())
 	r.Use(otelgin.Middleware("truckguard-core"))
 	r.Use(middleware.Logger())
+	r.Use(middleware.MetricsMiddleware())
+
+	// Health check with service_up gauge
+	meter := otel.Meter("truckguard-core")
+	serviceUpGauge, _ := meter.Int64ObservableGauge("service_up",
+		metric.WithDescription("Service health status (1 for up)"),
+	)
+	_, _ = meter.RegisterCallback(func(ctx context.Context, observer metric.Observer) error {
+		observer.ObserveInt64(serviceUpGauge, 1)
+		return nil
+	}, serviceUpGauge)
 
 	r.Match([]string{"GET", "HEAD"}, "/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
