@@ -53,8 +53,7 @@ func HandleUpdatePost(c *gin.Context) {
 	}
 
 	post.Name = input.Name
-	post.IsDefault = input.IsDefault
-	// Adding more fields if model changes
+	post.Description = input.Description
 
 	repository.DB.WithContext(c.Request.Context()).Save(&post)
 	c.JSON(http.StatusOK, post)
@@ -62,7 +61,7 @@ func HandleUpdatePost(c *gin.Context) {
 
 func HandleDeletePost(c *gin.Context) {
 	id := c.Param("id")
-	if err := repository.DB.WithContext(c.Request.Context()).Delete(&models.CustomsPost{}, id).Error; err != nil {
+	if err := repository.DB.WithContext(c.Request.Context()).Unscoped().Delete(&models.CustomsPost{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete"})
 		return
 	}

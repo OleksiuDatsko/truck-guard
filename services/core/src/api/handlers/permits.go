@@ -54,10 +54,9 @@ func HandleGetPermits(c *gin.Context) {
 	query.Count(&total)
 
 	query.Limit(limit).Offset(offset).Order("created_at desc").
-		Preload("GateEvents").
-		Preload("GateEvents.Gate").
-		Preload("GateEvents.PlateEvents").
-		Preload("GateEvents.WeightEvents").
+		Preload("CustomsPost").
+		Preload("PlateEvents").
+		Preload("WeightEvents").
 		Find(&permits)
 
 	utils.SendPaginatedResponse(c, permits, total, page, limit)
@@ -76,18 +75,10 @@ func HandleCreatePermit(c *gin.Context) {
 	repository.DB.WithContext(c.Request.Context()).Where("auth_id = ?", authID).First(&user)
 	if user.ID != 0 {
 		input.CreatedBy = &user.ID
-	}
-
-	// 1. Assign Flow
-	if input.FlowID == nil {
-		// Logic to assign default flow or based on post
-		var defaultFlow models.Flow
-		if err := repository.DB.WithContext(c.Request.Context()).First(&defaultFlow).Error; err == nil {
-			input.FlowID = &defaultFlow.ID
-			input.CurrentStepSequence = 1
+		// Automatically assign customs post if user has one and input is missing it
+		if input.CustomsPostID == nil && user.CustomsPostID != nil {
+			input.CustomsPostID = user.CustomsPostID
 		}
-	} else {
-		input.CurrentStepSequence = 1
 	}
 
 	input.EntryTime = time.Now()
@@ -135,7 +126,6 @@ func HandleUpdatePermit(c *gin.Context) {
 	}
 
 	// Audit
-
 	logPermitAudit(c, permit.ID, user.ID, "update", input, "Оновлено оператором")
 
 	c.JSON(http.StatusOK, permit)
@@ -157,10 +147,9 @@ func HandleGetPermitByID(c *gin.Context) {
 	id := c.Param("id")
 	var permit models.Permit
 	if err := repository.DB.WithContext(c.Request.Context()).
-		Preload("GateEvents").
-		Preload("GateEvents.Gate").
-		Preload("GateEvents.PlateEvents").
-		Preload("GateEvents.WeightEvents").
+		Preload("CustomsPost").
+		Preload("PlateEvents").
+		Preload("WeightEvents").
 		First(&permit, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Permit not found"})
 		return

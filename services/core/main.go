@@ -55,12 +55,6 @@ func main() {
 		api.GET("/scales/by-id/:scale_id", handlers.HandleGetConfigByScaleID)
 		configs := api.Group("/configs", middleware.RequireCorePermission("manage:configs"))
 		{
-			configs.GET("/presets", middleware.RequireCorePermission("read:presets"), handlers.HandleListPresets)
-			configs.GET("/presets/:id", middleware.RequireCorePermission("read:presets"), handlers.HandleGetPreset)
-			configs.POST("/presets", middleware.RequireCorePermission("create:presets"), handlers.HandleCreatePreset)
-			configs.PUT("/presets/:id", middleware.RequireCorePermission("update:presets"), handlers.HandleUpdatePreset)
-			configs.DELETE("/presets/:id", middleware.RequireCorePermission("delete:presets"), handlers.HandleDeletePreset)
-
 			configs.GET("/cameras", middleware.RequireCorePermission("read:cameras"), handlers.HandleGetCameras)
 			configs.GET("/cameras/:id", middleware.RequireCorePermission("read:cameras"), handlers.HandleGetConfigByID)
 			configs.POST("/cameras",
@@ -80,24 +74,12 @@ func main() {
 			configs.PUT("/scales/:id", middleware.RequireCorePermission("update:scales"), handlers.HandleUpdateScale)
 			configs.DELETE("/scales/:id", middleware.RequireCorePermission("delete:scales"), handlers.HandleDeleteScale)
 
-			configs.GET("/gates", middleware.RequireCorePermission("read:gates"), handlers.HandleGetGates)
-			configs.GET("/gates/:id", middleware.RequireCorePermission("read:gates"), handlers.HandleGetGateByID)
-			configs.POST("/gates", middleware.RequireCorePermission("create:gates"), handlers.HandleCreateGate)
-			configs.PUT("/gates/:id", middleware.RequireCorePermission("update:gates"), handlers.HandleUpdateGate)
-			configs.DELETE("/gates/:id", middleware.RequireCorePermission("delete:gates"), handlers.HandleDeleteGate)
-
 			configs.GET("/settings", middleware.RequireCorePermission("read:settings"), handlers.HandleListSettings)
 			configs.POST("/settings", middleware.RequireCorePermission("update:settings"), handlers.HandleUpdateSetting)
 
 			configs.GET("/excluded-plates", middleware.RequireCorePermission("read:excluded_plates"), handlers.HandleListExcludedPlates)
 			configs.POST("/excluded-plates", middleware.RequireCorePermission("create:excluded_plates"), handlers.HandleCreateExcludedPlate)
 			configs.DELETE("/excluded-plates/:id", middleware.RequireCorePermission("delete:excluded_plates"), handlers.HandleDeleteExcludedPlate)
-
-			configs.GET("/flows", middleware.RequireCorePermission("read:flows"), handlers.HandleListFlows)
-			configs.GET("/flows/:id", middleware.RequireCorePermission("read:flows"), handlers.HandleGetFlow)
-			configs.POST("/flows", middleware.RequireCorePermission("create:flows"), handlers.HandleCreateFlow)
-			configs.PUT("/flows/:id", middleware.RequireCorePermission("update:flows"), handlers.HandleUpdateFlow)
-			configs.DELETE("/flows/:id", middleware.RequireCorePermission("delete:flows"), handlers.HandleDeleteFlow)
 
 		}
 
@@ -155,21 +137,19 @@ func main() {
 			events.GET("/system", middleware.RequireCorePermission("read:events"), handlers.HandleGetSystemEvents)
 			events.GET("/system/:id", middleware.RequireCorePermission("read:events"), handlers.HandleGetSystemEventByID)
 
-			events.GET("/gate", middleware.RequireCorePermission("read:events"), handlers.HandleGetGateEvents)
-			events.GET("/gate/:id", middleware.RequireCorePermission("read:events"), handlers.HandleGetGateEventByID)
 		}
 
 		permits := api.Group("/permits")
 		{
-			permits.GET("/", middleware.RequireCorePermission("read:permits"), handlers.HandleGetPermits)
+			permits.GET("", middleware.RequireCorePermission("read:permits"), handlers.HandleGetPermits)
 			permits.GET("/:id", middleware.RequireCorePermission("read:permits"), handlers.HandleGetPermitByID)
-			permits.POST("/", middleware.RequireCorePermission("create:permits"), handlers.HandleCreatePermit)
+			permits.POST("", middleware.RequireCorePermission("create:permits"), handlers.HandleCreatePermit)
 			permits.PUT("/:id", middleware.RequireCorePermission("update:permits"), handlers.HandleUpdatePermit)
 		}
 
 		users := api.Group("/users")
 		{
-			users.GET("/", middleware.RequireCorePermission("read:users"), handlers.HandleListUsers)
+			users.GET("", middleware.RequireCorePermission("read:users"), handlers.HandleListUsers)
 			users.GET("/me", handlers.HandleGetMyProfile)
 			users.PUT("/me", handlers.HandleUpdateMyProfile)
 			users.GET("/:id", middleware.RequireCorePermission("read:users"), handlers.HandleGetUser)

@@ -253,19 +253,13 @@
 
       <!-- Additional Info (JSON Payload or other) -->
       <Card.Root class="border-0 shadow-sm bg-muted/10">
-        <Card.Header class="pb-2">
+        <Card.Header>
           <Card.Title class="text-sm font-medium text-muted-foreground"
-            >Технічні деталі</Card.Title
+            >Додаткова інформація</Card.Title
           >
         </Card.Header>
         <Card.Content>
           <dl class="grid grid-cols-2 gap-6">
-            <div>
-              <dt class="text-xs font-medium text-muted-foreground">
-                ID Події
-              </dt>
-              <dd class="mt-1 text-sm text-foreground font-mono">{event.ID}</dd>
-            </div>
             <div>
               <dt class="text-xs font-medium text-muted-foreground">
                 Системна подія
@@ -284,14 +278,14 @@
             </div>
             <div>
               <dt class="text-xs font-medium text-muted-foreground">
-                Подія на воротах
+                Перепустка
               </dt>
               <dd class="mt-1 text-sm text-foreground font-mono">
-                {#if event.gate_event_id}
+                {#if event.permit_id}
                   <a
-                    href={`/events/gate/${event.gate_event_id}`}
+                    href={`/permits/${event.permit_id}`}
                     class="underline hover:text-blue-500 transition-colors"
-                    >#{event.gate_event_id}</a
+                    >#{event.permit_id}</a
                   >
                 {:else}
                   -

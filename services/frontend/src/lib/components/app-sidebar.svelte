@@ -3,8 +3,7 @@
   import Activity from "@lucide/svelte/icons/activity";
   import Camera from "@lucide/svelte/icons/camera";
   import ClipboardList from "@lucide/svelte/icons/clipboard-list";
-  import DoorOpen from "@lucide/svelte/icons/door-open";
-  import GitFork from "@lucide/svelte/icons/git-fork";
+
   import LayoutDashboard from "@lucide/svelte/icons/layout-dashboard";
   import Scale from "@lucide/svelte/icons/scale";
   import Settings from "@lucide/svelte/icons/settings";
@@ -45,18 +44,7 @@
             icon: Scale,
             permissions: ["read:scales"],
           },
-          {
-            title: "Гейти",
-            url: "/config/gates",
-            icon: DoorOpen,
-            permissions: ["read:gates"],
-          },
-          {
-            title: "Маршрути",
-            url: "/config/flows",
-            icon: GitFork,
-            permissions: ["read:flows"],
-          },
+
           {
             title: "Налаштування",
             url: "/config/settings",

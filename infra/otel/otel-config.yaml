@@ -8,7 +8,7 @@ receivers:
 
 exporters:
   otlp/remote:
-    endpoint: "192.168.0.191:4317"
+    endpoint: "192.168.56.102:4317"
     tls:
       insecure: true
   debug:

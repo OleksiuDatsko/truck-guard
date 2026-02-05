@@ -176,26 +176,6 @@ services:
     ports:
       - "6379:6379"
 
-  registry:
-    image: patrikx3/p3x-redis-ui:latest
-    ports:
-      - "7843:7843"
-    volumes:
-      - ./redis-ui-settings:/settings
-
-  pgadmin:
-    image: dpage/pgadmin4
-    ports:
-      - "8888:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-    volumes:
-      - ./pgadmin-data:/var/lib/pgadmin
-    depends_on:
-      db:
-        condition: service_healthy
-
   minio:
     image: minio/minio
     restart: unless-stopped

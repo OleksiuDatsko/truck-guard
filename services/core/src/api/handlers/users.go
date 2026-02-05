@@ -31,7 +31,7 @@ func HandleCreateUser(c *gin.Context) {
 		return
 	}
 
-	authClient := clients.NewAuthClient()
+	authClient := clients.NewAuthClient(c.GetHeader("Authorization"), c.GetHeader("X-Api-Key"))
 	if authClient == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Auth client not configured"})
 		return
@@ -42,8 +42,6 @@ func HandleCreateUser(c *gin.Context) {
 		input.Username,
 		input.Password,
 		input.Role,
-		c.GetHeader("Authorization"),
-		c.GetHeader("X-Api-Key"),
 	)
 
 	if err != nil {
@@ -115,13 +113,11 @@ func HandleDeleteUser(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User profile not found"})
 		return
 	}
-	authClient := clients.NewAuthClient()
+	authClient := clients.NewAuthClient(c.GetHeader("Authorization"), c.GetHeader("X-Api-Key"))
 	if authClient != nil {
 		err := authClient.DeleteUser(
 			c.Request.Context(),
 			user.AuthID,
-			c.GetHeader("Authorization"),
-			c.GetHeader("X-Api-Key"),
 		)
 		if err != nil {
 			c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to delete user from Auth service"})
@@ -185,7 +181,7 @@ func HandleGetMyProfile(c *gin.Context) {
 		return
 	}
 
-	authUser, err := clients.NewAuthClient().GetUser(c.Request.Context(), authID, c.GetHeader("Authorization"))
+	authUser, err := clients.NewAuthClient(c.GetHeader("Authorization"), "").GetUser(c.Request.Context(), authID)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to get user from Auth service"})
 		return

@@ -14,11 +14,13 @@ import (
 )
 
 type AuthClient struct {
-	BaseURL    string
-	HTTPClient *http.Client
+	BaseURL      string
+	HTTPClient   *http.Client
+	AuthHeader   string
+	ApiKeyHeader string
 }
 
-func NewAuthClient() *AuthClient {
+func NewAuthClient(authHeader, apiKeyHeader string) *AuthClient {
 	baseURL := os.Getenv("AUTH_SERVICE_URL")
 	if baseURL == "" {
 		return nil
@@ -29,6 +31,8 @@ func NewAuthClient() *AuthClient {
 			Transport: otelhttp.NewTransport(http.DefaultTransport),
 			Timeout:   10 * time.Second,
 		},
+		AuthHeader:   authHeader,
+		ApiKeyHeader: apiKeyHeader,
 	}
 }
 
@@ -53,7 +57,7 @@ type RegisterUserResponse struct {
 	Username string `json:"username"`
 }
 
-func (c *AuthClient) CreateApiKey(ctx context.Context, name string, permissions []string, authHeader, apiKeyHeader string) (*CreateKeyResponse, error) {
+func (c *AuthClient) CreateApiKey(ctx context.Context, name string, permissions []string) (*CreateKeyResponse, error) {
 	url := fmt.Sprintf("%s/admin/keys", c.BaseURL)
 
 	reqBody := CreateKeyRequest{
@@ -72,11 +76,11 @@ func (c *AuthClient) CreateApiKey(ctx context.Context, name string, permissions 
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	if authHeader != "" {
-		req.Header.Set("Authorization", authHeader)
+	if c.AuthHeader != "" {
+		req.Header.Set("Authorization", c.AuthHeader)
 	}
-	if apiKeyHeader != "" {
-		req.Header.Set("X-Api-Key", apiKeyHeader)
+	if c.ApiKeyHeader != "" {
+		req.Header.Set("X-Api-Key", c.ApiKeyHeader)
 	}
 
 	resp, err := c.HTTPClient.Do(req)
@@ -97,7 +101,7 @@ func (c *AuthClient) CreateApiKey(ctx context.Context, name string, permissions 
 	return &result, nil
 }
 
-func (c *AuthClient) DeleteApiKey(ctx context.Context, keyID string, authHeader, apiKeyHeader string) error {
+func (c *AuthClient) DeleteApiKey(ctx context.Context, keyID string) error {
 	url := fmt.Sprintf("%s/admin/keys/%s", c.BaseURL, keyID)
 
 	req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
@@ -105,11 +109,11 @@ func (c *AuthClient) DeleteApiKey(ctx context.Context, keyID string, authHeader,
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	if authHeader != "" {
-		req.Header.Set("Authorization", authHeader)
+	if c.AuthHeader != "" {
+		req.Header.Set("Authorization", c.AuthHeader)
 	}
-	if apiKeyHeader != "" {
-		req.Header.Set("X-Api-Key", apiKeyHeader)
+	if c.ApiKeyHeader != "" {
+		req.Header.Set("X-Api-Key", c.ApiKeyHeader)
 	}
 
 	resp, err := c.HTTPClient.Do(req)
@@ -125,7 +129,7 @@ func (c *AuthClient) DeleteApiKey(ctx context.Context, keyID string, authHeader,
 	return nil
 }
 
-func (c *AuthClient) RegisterUser(ctx context.Context, username, password, role string, authHeader, apiKeyHeader string) (*RegisterUserResponse, error) {
+func (c *AuthClient) RegisterUser(ctx context.Context, username, password, role string) (*RegisterUserResponse, error) {
 	url := fmt.Sprintf("%s/register", c.BaseURL)
 
 	reqBody := RegisterUserRequest{
@@ -145,11 +149,11 @@ func (c *AuthClient) RegisterUser(ctx context.Context, username, password, role 
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	if authHeader != "" {
-		req.Header.Set("Authorization", authHeader)
+	if c.AuthHeader != "" {
+		req.Header.Set("Authorization", c.AuthHeader)
 	}
-	if apiKeyHeader != "" {
-		req.Header.Set("X-Api-Key", apiKeyHeader)
+	if c.ApiKeyHeader != "" {
+		req.Header.Set("X-Api-Key", c.ApiKeyHeader)
 	}
 
 	resp, err := c.HTTPClient.Do(req)
@@ -170,7 +174,7 @@ func (c *AuthClient) RegisterUser(ctx context.Context, username, password, role 
 	return &result, nil
 }
 
-func (c *AuthClient) DeleteUser(ctx context.Context, userID uint, authHeader, apiKeyHeader string) error {
+func (c *AuthClient) DeleteUser(ctx context.Context, userID uint) error {
 	url := fmt.Sprintf("%s/admin/users/%d", c.BaseURL, userID)
 
 	req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
@@ -178,11 +182,11 @@ func (c *AuthClient) DeleteUser(ctx context.Context, userID uint, authHeader, ap
 		return fmt.Errorf("failed to create delete user request: %w", err)
 	}
 
-	if authHeader != "" {
-		req.Header.Set("Authorization", authHeader)
+	if c.AuthHeader != "" {
+		req.Header.Set("Authorization", c.AuthHeader)
 	}
-	if apiKeyHeader != "" {
-		req.Header.Set("X-Api-Key", apiKeyHeader)
+	if c.ApiKeyHeader != "" {
+		req.Header.Set("X-Api-Key", c.ApiKeyHeader)
 	}
 
 	resp, err := c.HTTPClient.Do(req)
@@ -198,7 +202,7 @@ func (c *AuthClient) DeleteUser(ctx context.Context, userID uint, authHeader, ap
 	return nil
 }
 
-func (c *AuthClient) GetUser(ctx context.Context, userID string, authHeader string) (*dtos.AuthUser, error) {
+func (c *AuthClient) GetUser(ctx context.Context, userID string) (*dtos.AuthUser, error) {
 	url := fmt.Sprintf("%s/admin/users/%s", c.BaseURL, userID)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -206,8 +210,8 @@ func (c *AuthClient) GetUser(ctx context.Context, userID string, authHeader stri
 		return nil, fmt.Errorf("failed to create get user request: %w", err)
 	}
 
-	if authHeader != "" {
-		req.Header.Set("Authorization", authHeader)
+	if c.AuthHeader != "" {
+		req.Header.Set("Authorization", c.AuthHeader)
 	}
 
 	resp, err := c.HTTPClient.Do(req)

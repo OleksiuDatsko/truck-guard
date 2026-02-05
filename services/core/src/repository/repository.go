@@ -24,17 +24,15 @@ func InitDB(dsn string) {
 
 	db.AutoMigrate(
 		&models.SystemEvent{},
-		&models.RawPlateEvent{},
-		&models.RawWeightEvent{},
+		&models.PlateEvent{},
+		&models.WeightEvent{},
 		&models.CameraConfig{},
 		&models.ScaleConfig{},
-		&models.CameraPreset{},
-		&models.Gate{},
-		&models.Flow{},
-		&models.FlowStep{},
 		&models.SystemSetting{},
 		&models.ExcludedPlate{},
 		&models.Permit{},
+		&models.PermitCustomsData{},
+		&models.PermitAudit{},
 		&models.User{},
 	)
 	DB = db

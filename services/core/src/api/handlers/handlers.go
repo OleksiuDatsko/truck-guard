@@ -17,7 +17,8 @@ import (
 )
 
 func HandlePlateEvent(c *gin.Context) {
-	var event models.RawPlateEvent
+	var event models.PlateEvent
+	slog.Info("Plate event received", "event", event)
 
 	if err := c.ShouldBindBodyWith(&event, binding.JSON); err != nil {
 		slog.Error("Failed to bind plate event", "error", err)
@@ -51,7 +52,7 @@ func HandlePatchPlateEvent(c *gin.Context) {
 		c.Status(400)
 		return
 	}
-	var event models.RawPlateEvent
+	var event models.PlateEvent
 	if err := repository.DB.WithContext(c.Request.Context()).First(&event, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
 		return
@@ -63,7 +64,7 @@ func HandlePatchPlateEvent(c *gin.Context) {
 	}
 
 	userID := c.GetHeader("X-User-ID")
-	if err := repository.DB.WithContext(c.Request.Context()).Model(&models.RawPlateEvent{}).Where("id = ?", id).Updates(map[string]interface{}{
+	if err := repository.DB.WithContext(c.Request.Context()).Model(&models.PlateEvent{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"plate_corrected": input.PlateCorrected,
 		"corrected_by":    userID,
 		"is_manual":       true,
@@ -97,11 +98,11 @@ func HandlePatchPlateEvent(c *gin.Context) {
 }
 
 func HandleGetPlateEvents(c *gin.Context) {
-	var events []models.RawPlateEvent
+	var events []models.PlateEvent
 	var total int64
 	limit, offset, page := utils.GetPagination(c)
 
-	query := repository.DB.WithContext(c.Request.Context()).Model(&models.RawPlateEvent{})
+	query := repository.DB.WithContext(c.Request.Context()).Model(&models.PlateEvent{})
 
 	if plate := c.Query("plate"); plate != "" {
 		query = query.Where("plate LIKE ?", "%"+plate+"%")
@@ -124,17 +125,17 @@ func HandleGetPlateEvents(c *gin.Context) {
 
 func HandleGetPlateEventByID(c *gin.Context) {
 	id := c.Param("id")
-	var event models.RawPlateEvent
+	var event models.PlateEvent
 	if err := repository.DB.WithContext(c.Request.Context()).First(&event, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
 		return
 	}
 
 	var response struct {
-		models.RawPlateEvent
+		models.PlateEvent
 		CorrectedByName string `json:"corrected_by_name,omitempty"`
 	}
-	response.RawPlateEvent = event
+	response.PlateEvent = event
 
 	if event.CorrectedBy != "" {
 		var user models.User
@@ -151,7 +152,7 @@ func HandleGetPlateEventByID(c *gin.Context) {
 }
 
 func HandleWeightEvent(c *gin.Context) {
-	var event models.RawWeightEvent
+	var event models.WeightEvent
 
 	if err := c.ShouldBindBodyWith(&event, binding.JSON); err != nil {
 		slog.Error("Failed to bind weight event", "error", err)
@@ -177,11 +178,11 @@ func HandleWeightEvent(c *gin.Context) {
 }
 
 func HandleGetWeightEvents(c *gin.Context) {
-	var events []models.RawWeightEvent
+	var events []models.WeightEvent
 	var total int64
 	limit, offset, page := utils.GetPagination(c)
 
-	query := repository.DB.WithContext(c.Request.Context()).Model(&models.RawWeightEvent{})
+	query := repository.DB.WithContext(c.Request.Context()).Model(&models.WeightEvent{})
 
 	if from := c.Query("from"); from != "" {
 		query = query.Where("created_at >= ?", from)
@@ -201,7 +202,7 @@ func HandleGetWeightEvents(c *gin.Context) {
 
 func HandleGetWeightEventByID(c *gin.Context) {
 	id := c.Param("id")
-	var event models.RawWeightEvent
+	var event models.WeightEvent
 	if err := repository.DB.WithContext(c.Request.Context()).First(&event, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Weight event not found"})
 		return
@@ -240,45 +241,6 @@ func HandleGetSystemEventByID(c *gin.Context) {
 	var event models.SystemEvent
 	if err := repository.DB.WithContext(c.Request.Context()).First(&event, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "System event not found"})
-		return
-	}
-	c.JSON(http.StatusOK, event)
-}
-
-func HandleGetGateEvents(c *gin.Context) {
-	var events []models.GateEvent
-	var total int64
-	limit, offset, page := utils.GetPagination(c)
-
-	query := repository.DB.WithContext(c.Request.Context()).Model(&models.GateEvent{})
-
-	if gate := c.Query("gate"); gate != "" {
-		query = query.Where("gate_id = ?", gate)
-	}
-	if from := c.Query("from"); from != "" {
-		query = query.Where("created_at >= ?", from)
-	}
-	if to := c.Query("to"); to != "" {
-		query = query.Where("created_at <= ?", to)
-	}
-
-	query.Count(&total)
-
-	if err := query.Limit(limit).Offset(offset).Order("created_at desc").
-		Preload("Gate").
-		Preload("WeightEvents").Preload("PlateEvents").
-		Find(&events).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch gate events"})
-		return
-	}
-	utils.SendPaginatedResponse(c, events, total, page, limit)
-}
-
-func HandleGetGateEventByID(c *gin.Context) {
-	id := c.Param("id")
-	var event models.GateEvent
-	if err := repository.DB.WithContext(c.Request.Context()).Preload("Gate").Preload("WeightEvents").Preload("PlateEvents").First(&event, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Gate event not found"})
 		return
 	}
 	c.JSON(http.StatusOK, event)

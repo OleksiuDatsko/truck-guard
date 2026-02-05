@@ -32,7 +32,6 @@
   import {
     CalendarDate,
     DateFormatter,
-    type DateValue,
     getLocalTimeZone,
   } from "@internationalized/date";
   import { cn } from "$lib/utils";
@@ -79,7 +78,6 @@
 
   let filters = $state({
     plate: page.url.searchParams.get("plate") || "",
-    gate: page.url.searchParams.get("gate") || "",
     type: page.url.searchParams.get("type") || "",
   });
 
@@ -135,8 +133,6 @@
 
     if (filters.plate) query.set("plate", filters.plate);
     else query.delete("plate");
-    if (filters.gate) query.set("gate", filters.gate);
-    else query.delete("gate");
     if (filters.type) query.set("type", filters.type);
     else query.delete("type");
 
@@ -147,7 +143,7 @@
   }
 
   function resetFilters() {
-    filters = { plate: "", gate: "", type: "" };
+    filters = { plate: "", type: "" };
     range = { start: undefined, end: undefined };
     applyFilters();
   }
@@ -179,15 +175,12 @@
 
   <Tabs.Root value={activeTab} onValueChange={handleTabChange} class="w-full">
     <div class="flex items-center justify-between">
-      <Tabs.List class="w-full justify-start grid-cols-4 lg:w-[640px] grid">
+      <Tabs.List class="w-full justify-start grid-cols-3 lg:w-[640px] grid">
         <Tabs.Trigger value="plate"
           ><Camera class="mr-2 h-4 w-4" /> Номери</Tabs.Trigger
         >
         <Tabs.Trigger value="weight"
           ><Scale class="mr-2 h-4 w-4" /> Вага</Tabs.Trigger
-        >
-        <Tabs.Trigger value="gate"
-          ><DoorOpen class="mr-2 h-4 w-4" /> Ворота</Tabs.Trigger
         >
         <Tabs.Trigger value="system"
           ><Settings class="mr-2 h-4 w-4" /> Система</Tabs.Trigger
@@ -202,7 +195,7 @@
         >
           <Funnel class="h-4 w-4" />
           Фільтри
-          {#if range.start || filters.plate || filters.gate || filters.type}
+          {#if range.start || filters.plate || filters.type}
             <div
               class="h-1.5 w-1.5 rounded-full bg-emerald-500 absolute top-2 right-2"
             ></div>
@@ -271,11 +264,6 @@
                 bind:value={filters.plate}
               />
             </div>
-          {:else if activeTab === "gate"}
-            <div class="grid gap-2">
-              <Label for="gate">ID Гейта</Label>
-              <Input id="gate" placeholder="ID..." bind:value={filters.gate} />
-            </div>
           {:else if activeTab === "system"}
             <div class="grid gap-2">
               <Label for="type">Тип</Label>
@@ -320,11 +308,6 @@
               <Table.Head>Час</Table.Head>
               <Table.Head>Обладнання</Table.Head>
               <Table.Head class="text-right">Показник ваги</Table.Head>
-            {:else if activeTab === "gate"}
-              <Table.Head>Час</Table.Head>
-              <Table.Head>Локація</Table.Head>
-              <Table.Head>Документ</Table.Head>
-              <Table.Head>Пов'язані дані</Table.Head>
             {:else if activeTab === "system"}
               <Table.Head>Час</Table.Head>
               <Table.Head>Категорія</Table.Head>
@@ -437,59 +420,6 @@
                         >кг</span
                       >
                     </span>
-                  </Table.Cell>
-                {:else if activeTab === "gate"}
-                  <Table.Cell class="whitespace-nowrap text-sm"
-                    >{formatDate(item.timestamp)}</Table.Cell
-                  >
-                  <Table.Cell>
-                    <div class="flex items-center gap-2">
-                      <div
-                        class="p-1.5 bg-emerald-50 dark:bg-emerald-950/30 rounded"
-                      >
-                        <DoorOpen
-                          class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
-                        />
-                      </div>
-                      <span class="font-semibold text-sm text-foreground"
-                        >{item.gate_id}</span
-                      >
-                    </div>
-                  </Table.Cell>
-                  <Table.Cell>
-                    {#if item.permit_id}
-                      <Button
-                        variant="link"
-                        class="p-0 h-auto text-sm font-bold flex gap-1 items-center text-blue-600 dark:text-blue-400"
-                        href={`/permits/${item.permit_id}`}
-                      >
-                        <FileText class="h-3 w-3" /> #{item.permit_id}
-                      </Button>
-                    {:else}
-                      <span
-                        class="text-muted-foreground text-xs bg-muted px-2 py-1 rounded border border-dashed border-border"
-                        >Немає перепустки</span
-                      >
-                    {/if}
-                  </Table.Cell>
-                  <Table.Cell>
-                    <div
-                      class="flex items-center gap-4
-                     font-medium"
-                    >
-                      <div
-                        class="flex items-center gap-1.5 text-muted-foreground"
-                      >
-                        <Camera class="h-3 w-3" />
-                        {item.plate_events?.length || 0}
-                      </div>
-                      <div
-                        class="flex items-center gap-1.5 text-muted-foreground"
-                      >
-                        <Scale class="h-3 w-3" />
-                        {item.weight_events?.length || 0}
-                      </div>
-                    </div>
                   </Table.Cell>
                 {:else if activeTab === "system"}
                   <Table.Cell class="whitespace-nowrap text-sm"

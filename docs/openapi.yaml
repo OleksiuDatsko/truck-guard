@@ -27,29 +27,24 @@ tags:
   - name: "Hardware: Scales"
     description: Scale discovery and config
   - name: "Hardware: Gates"
-    description: Gate configuration
-  - name: "System: Presets"
-    description: Camera presets
   - name: "System: Settings"
     description: Global system settings
   - name: "System: Exclusions"
     description: Excluded plates management
-  - name: "Events: Gate"
-    description: Aggregated gate events
   - name: "Events: Raw"
     description: Raw plate and weight events
   - name: "Events: System"
     description: System/Audit events
   - name: "Operations: Permits"
     description: Permit management
-  - name: "Operations: Flows"
-    description: Flow management
   - name: Ingestor
     description: Data ingestion
   - name: ANPR
     description: Recognition service
   - name: Health
     description: Health checks
+  - name: "Core: Data"
+    description: Master data management
 
 security:
   - bearerAuth: []
@@ -117,14 +112,6 @@ paths:
           description: Token is valid
         401:
           $ref: "#/components/responses/Unauthorized"
-
-  /auth/health:
-    get:
-      tags: [Health]
-      summary: Health check
-      responses:
-        200:
-          description: Service is healthy
 
   # --- Core Service Users ---
   /api/users/by-auth-id/{authId}:
@@ -404,14 +391,6 @@ paths:
                 items: { $ref: "#/components/schemas/Permission" }
 
   # --- Core Service ---
-  /api/health:
-    get:
-      tags: [Health]
-      summary: Core Health check
-      responses:
-        200:
-          description: Service is healthy
-
   /api/cameras/by-id/{camera_id}:
     get:
       tags: ["Hardware: Cameras"]
@@ -445,71 +424,6 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ScaleConfig" }
-
-  /api/configs/presets:
-    get:
-      tags: ["System: Presets"]
-      summary: List camera presets
-      description: |
-        List all available camera configuration presets.
-        Permissions: `manage:configs`, `read:presets`
-      responses:
-        200:
-          description: List of presets
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: "#/components/schemas/CameraPreset" }
-    post:
-      tags: ["System: Presets"]
-      summary: Create camera preset
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/CameraPreset" }
-      responses:
-        201:
-          description: Preset created
-
-  /api/configs/presets/{id}:
-    get:
-      tags: ["System: Presets"]
-      summary: Get preset by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        200:
-          description: Preset details
-    put:
-      tags: ["System: Presets"]
-      summary: Update preset
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/CameraPreset" }
-      responses:
-        200:
-          description: Preset updated
-    delete:
-      tags: ["System: Presets"]
-      summary: Delete preset
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        204:
-          description: Preset deleted
 
   /api/configs/cameras:
     get:
@@ -644,24 +558,6 @@ paths:
         201:
           description: Scale registered
 
-  /api/configs/scales/by-id/{scale_id}:
-    get:
-      tags: ["Hardware: Scales"]
-      summary: Get scale config by Source ID
-      parameters:
-        - name: scale_id
-          in: path
-          required: true
-          schema: { type: string }
-      responses:
-        200:
-          description: Scale config
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/ScaleConfig" }
-        404:
-          $ref: "#/components/responses/NotFound"
-
   /api/configs/scales/{id}:
     put:
       tags: ["Hardware: Scales"]
@@ -695,74 +591,6 @@ paths:
       responses:
         204:
           description: Scale deleted
-
-  /api/configs/gates:
-    get:
-      tags: ["Hardware: Gates"]
-      summary: List all gates
-      description: |
-        List all physical gates.
-        Permissions: `read:gates`
-      responses:
-        200:
-          description: List of gates
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: "#/components/schemas/Gate" }
-    post:
-      tags: ["Hardware: Gates"]
-      summary: Create a new gate
-      description: |
-        Create a new physical gate grouping.
-        Permissions: `create:gates`
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Gate" }
-      responses:
-        201:
-          description: Gate created
-
-  /api/configs/gates/{id}:
-    get:
-      tags: ["Hardware: Gates"]
-      summary: Get gate by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        200:
-          description: Gate details
-    put:
-      tags: ["Hardware: Gates"]
-      summary: Update gate
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Gate" }
-      responses:
-        200:
-          description: Gate updated
-    delete:
-      tags: ["Hardware: Gates"]
-      summary: Delete gate
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        204:
-          description: Gate deleted
 
   /api/configs/settings:
     get:
@@ -838,90 +666,6 @@ paths:
         204:
           description: Plate removed
 
-  /api/configs/flows:
-    get:
-      tags: ["Operations: Flows"]
-      summary: List all flows
-      description: |
-        List all configured flows with their steps.
-        Permissions: `read:flows`
-      responses:
-        200:
-          description: List of flows
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: "#/components/schemas/Flow" }
-    post:
-      tags: ["Operations: Flows"]
-      summary: Create new flow
-      description: |
-        Create a new flow definition.
-        Create a new flow definition.
-        Permissions: `create:flows`
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Flow" }
-      responses:
-        201:
-          description: Flow created
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Flow" }
-
-  /api/configs/flows/{id}:
-    get:
-      tags: ["Operations: Flows"]
-      summary: Get flow details
-      description: |
-        Get detailed flow information.
-        Permissions: `read:flows`
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        200:
-          description: Flow details
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Flow" }
-    put:
-      tags: ["Operations: Flows"]
-      summary: Update flow
-      description: |
-        Update an existing flow.
-        Permissions: `update:flows`
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/Flow" }
-      responses:
-        200:
-          description: Flow updated
-    delete:
-      tags: ["Operations: Flows"]
-      summary: Delete flow
-      description: |
-        Delete a flow.
-        Permissions: `delete:flows`
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        204:
-          description: Flow deleted
-
   /api/events/plate:
     get:
       tags: ["Events: Raw"]
@@ -982,6 +726,31 @@ paths:
               schema: { $ref: "#/components/schemas/RawPlateEvent" }
         404:
           $ref: "#/components/responses/NotFound"
+    patch:
+      tags: ["Events: Raw"]
+      summary: Correct plate recognition result
+      description: |
+        Correct the plate number and tracks the user who performed the correction.
+        Permissions: `update:events`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plate_corrected]
+              properties:
+                plate_corrected: { type: string }
+      responses:
+        200:
+          description: Event corrected
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RawPlateEvent" }
 
   /api/events/weight:
     get:
@@ -1089,54 +858,12 @@ paths:
         404:
           $ref: "#/components/responses/NotFound"
 
-  /api/events/gate:
-    get:
-      tags: ["Events: Gate"]
-      summary: List gate events
-      description: |
-        List all aggregated gate events.
-        Permissions: `read:events`
-      parameters:
-        - name: page
-          in: query
-          schema: { type: integer, default: 1 }
-      responses:
-        200:
-          description: List of gate events
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items: { $ref: "#/components/schemas/GateEvent" }
-                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
-
-  /api/events/gate/{id}:
-    get:
-      tags: ["Events: Gate"]
-      summary: Get gate event by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        200:
-          description: Gate event details
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/GateEvent" }
-        404:
-          $ref: "#/components/responses/NotFound"
-
-  /api/permits/:
+  /api/permits:
     get:
       tags: ["Operations: Permits"]
       summary: List all permits
       description: |
-        List all vehicle permits (correlated passes).
+        List all vehicle permits (correlated passes) with pagination and filtering.
         Permissions: `read:permits`, `read:permits:all`
       parameters:
         - name: page
@@ -1149,6 +876,18 @@ paths:
           in: query
           description: Filter permits by license plate (exact match on front or back)
           schema: { type: string }
+      responses:
+        200:
+          description: List of permits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Permit" }
+                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
     post:
       tags: ["Operations: Permits"]
       summary: Create a new permit manually
@@ -1165,17 +904,6 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Permit" }
-        200:
-          description: List of permits
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items: { $ref: "#/components/schemas/Permit" }
-                  metadata: { $ref: "#/components/schemas/PaginationMetadata" }
 
   /api/permits/{id}:
     get:
@@ -1220,37 +948,41 @@ paths:
               schema: { $ref: "#/components/schemas/Permit" }
 
   # --- Core: Users ---
-  /api/users/:
+  /api/users:
     get:
       tags: ["Core: Users"]
-      summary: List all users
+      summary: List all user profiles
       description: |
-        List all users in the system (Core profiles).
+        List all user profiles stored in the Core service.
         Permissions: `read:users`
       responses:
         200:
-          description: List of users
+          description: List of user profiles
           content:
             application/json:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/UserCore" }
-    post:
+
+  /api/users/me:
+    get:
       tags: ["Core: Users"]
-      summary: Create a new user
-      description: |
-        Create a new user account and profile. Registration is proxied to Auth service.
-        Permissions: `create:users`
+      summary: Get current user profile
+      responses:
+        200:
+          description: User profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserCore" }
+    put:
+      tags: ["Core: Users"]
+      summary: Update current user profile
       requestBody:
         content:
           application/json:
             schema:
               type: object
-              required: [username, password]
               properties:
-                username: { type: string }
-                password: { type: string }
-                role: { type: string }
                 first_name: { type: string }
                 last_name: { type: string }
                 third_name: { type: string }
@@ -1259,8 +991,8 @@ paths:
                 notes: { type: string }
                 customs_post_id: { type: integer, nullable: true }
       responses:
-        201:
-          description: User created
+        200:
+          description: User updated
           content:
             application/json:
               schema: { $ref: "#/components/schemas/UserCore" }
@@ -1492,7 +1224,7 @@ paths:
       responses:
         201:
           description: Created
-  
+
   /api/data/modes/{id}:
     put:
       tags: ["Data"]
@@ -1541,7 +1273,7 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/VehicleType" }
     post:
-      tags: ["Data"]
+      tags: ["Core: Data"]
       summary: Create vehicle type
       requestBody:
         content:
@@ -1550,10 +1282,10 @@ paths:
       responses:
         201:
           description: Created
-  
+
   /api/data/vehicle-types/{id}:
     put:
-      tags: ["Data"]
+      tags: ["Core: Data"]
       summary: Update vehicle type
       parameters:
         - name: id
@@ -1568,7 +1300,7 @@ paths:
         200:
           description: Updated
     delete:
-      tags: ["Data"]
+      tags: ["Core: Data"]
       summary: Delete vehicle type
       parameters:
         - name: id
@@ -1581,7 +1313,7 @@ paths:
 
   /api/data/payment-types:
     get:
-      tags: ["Data"]
+      tags: ["Core: Data"]
       summary: List payment types
       parameters:
         - name: code
@@ -1599,7 +1331,7 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/PaymentType" }
     post:
-      tags: ["Data"]
+      tags: ["Core: Data"]
       summary: Create payment type
       requestBody:
         content:
@@ -1608,10 +1340,10 @@ paths:
       responses:
         201:
           description: Created
-  
+
   /api/data/payment-types/{id}:
     put:
-      tags: ["Data"]
+      tags: ["Core: Data"]
       summary: Update payment type
       parameters:
         - name: id
@@ -1626,7 +1358,7 @@ paths:
         200:
           description: Updated
     delete:
-      tags: ["Data"]
+      tags: ["Core: Data"]
       summary: Delete payment type
       parameters:
         - name: id
@@ -1639,7 +1371,7 @@ paths:
 
   /api/data/companies:
     get:
-      tags: ["Data"]
+      tags: ["Core: Data"]
       summary: List companies
       parameters:
         - name: edrpou
@@ -1657,7 +1389,7 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/Company" }
     post:
-      tags: ["Data"]
+      tags: ["Core: Data"]
       summary: Create company
       requestBody:
         content:
@@ -1666,10 +1398,10 @@ paths:
       responses:
         201:
           description: Created
-  
+
   /api/data/companies/{id}:
     put:
-      tags: ["Data"]
+      tags: ["Core: Data"]
       summary: Update company
       parameters:
         - name: id
@@ -1684,7 +1416,7 @@ paths:
         200:
           description: Updated
     delete:
-      tags: ["Data"]
+      tags: ["Core: Data"]
       summary: Delete company
       parameters:
         - name: id
@@ -1742,6 +1474,7 @@ components:
         notes: { type: string }
         role: { type: string }
         customs_post_id: { type: integer, nullable: true }
+        customs_post: { $ref: "#/components/schemas/CustomsPost" }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
 
@@ -1783,23 +1516,20 @@ components:
         camera_id: { type: string, description: "Source Identification String" }
         name: { type: string }
         description: { type: string }
-        preset_id: { type: integer }
+        type: { type: string, enum: [front, back] }
         format:
           type: string
           enum: [xml, json]
         run_anpr: { type: boolean }
+        trigger_permit_creation:
+          {
+            type: boolean,
+            description: "Whether events from this camera should trigger a new permit creation",
+          }
         field_mapping:
           { type: string, description: "JSON mapping for payload fields" }
-        gate_id: { type: integer, description: "Physical gate association" }
-
-    CameraPreset:
-      type: object
-      properties:
-        id: { type: integer }
-        name: { type: string }
-        format: { type: string, enum: [xml, json] }
-        run_anpr: { type: boolean }
-        field_mapping: { type: string }
+        customs_post_id: { type: integer, nullable: true }
+        customs_post: { $ref: "#/components/schemas/CustomsPost" }
 
     SystemSetting:
       type: object
@@ -1809,18 +1539,6 @@ components:
         key: { type: string }
         value: { type: string }
 
-    Gate:
-      type: object
-      required: [name]
-      properties:
-        id: { type: integer }
-        name: { type: string }
-        description: { type: string }
-        is_entry: { type: boolean }
-        is_exit: { type: boolean }
-        customs_post_id: { type: integer }
-        customs_post: { $ref: "#/components/schemas/CustomsPost" }
-
     ExcludedPlate:
       type: object
       required: [plate]
@@ -1829,44 +1547,25 @@ components:
         plate: { type: string }
         comment: { type: string }
 
-    Flow:
-      type: object
-      required: [name]
-      properties:
-        id: { type: integer }
-        name: { type: string }
-        description: { type: string }
-        steps:
-          type: array
-          items: { $ref: "#/components/schemas/FlowStep" }
-
-    FlowStep:
-      type: object
-      properties:
-        id: { type: integer }
-        flow_id: { type: integer }
-        gate_id: { type: integer }
-        sequence: { type: integer }
-        gate: { $ref: "#/components/schemas/Gate" }
-
     Permit:
       type: object
       properties:
         id: { type: integer }
-        flow_id: { type: integer }
-        flow: { $ref: "#/components/schemas/Flow" }
-        customs_post_id: { type: integer }
+        code: { type: string }
+        is_closed: { type: boolean }
+        is_void: { type: boolean }
+        customs_post_id: { type: integer, nullable: true }
         customs_post: { $ref: "#/components/schemas/CustomsPost" }
         declaration_number: { type: string }
-        customs_mode_id: { type: integer }
+        customs_mode_code: { type: string }
         customs_mode: { $ref: "#/components/schemas/CustomsMode" }
         notes: { type: string }
-        vehicle_type_id: { type: integer }
+        vehicle_type_id: { type: integer, nullable: true }
         vehicle_type: { $ref: "#/components/schemas/VehicleType" }
         plate_front: { type: string }
         plate_back: { type: string }
         total_weight: { type: number }
-        payment_type_id: { type: integer }
+        payment_type_id: { type: integer, nullable: true }
         payment_type: { $ref: "#/components/schemas/PaymentType" }
         entry_fee: { type: number }
         exit_fee: { type: number }
@@ -1874,16 +1573,18 @@ components:
           type: array
           items: { $ref: "#/components/schemas/PermitPayer" }
         entry_time: { type: string, format: date-time }
-        exit_time: { type: string, format: date-time }
+        exit_time: { type: string, format: date-time, nullable: true }
         last_activity_at: { type: string, format: date-time }
-        is_closed: { type: boolean }
-        is_void: { type: boolean }
-        created_by: { type: integer }
-        verified_by: { type: integer }
-        verified_at: { type: string, format: date-time }
-        gate_events:
+        created_by: { type: integer, nullable: true }
+        verified_by: { type: integer, nullable: true }
+        verified_at: { type: string, format: date-time, nullable: true }
+        responsible_user_id: { type: integer, nullable: true }
+        plate_events:
           type: array
-          items: { $ref: "#/components/schemas/GateEvent" }
+          items: { $ref: "#/components/schemas/RawPlateEvent" }
+        weight_events:
+          type: array
+          items: { $ref: "#/components/schemas/RawWeightEvent" }
         audit_events:
           type: array
           items: { $ref: "#/components/schemas/PermitAudit" }
@@ -1899,24 +1600,34 @@ components:
         format:
           type: string
           enum: [xml, json]
+        trigger_permit_creation:
+          {
+            type: boolean,
+            description: "Whether events from this scale should trigger a new permit creation",
+          }
         field_mapping:
           { type: string, description: "JSON mapping for payload fields" }
+        customs_post_id: { type: integer, nullable: true }
+        customs_post: { $ref: "#/components/schemas/CustomsPost" }
 
     RawPlateEvent:
       type: object
       required: [camera_id, plate, timestamp]
       properties:
         id: { type: integer }
-        camera_id: { type: string }
-        camera_name: { type: string }
+        camera_id: { type: string, description: "Internal SourceID" }
+        camera_source_id: { type: string, description: "Raw device SourceID" }
+        camera_source_name: { type: string }
         plate: { type: string }
+        plate_corrected: { type: string }
+        corrected_by: { type: string }
         is_manual: { type: boolean }
         image_key: { type: string }
         timestamp: { type: string, format: date-time }
         suggestions:
-          { type: string, description: "JSONB suggestions from ANPR" }
+          { type: object, description: "JSONB suggestions from ANPR" }
         system_event_id: { type: integer }
-        system_event: { $ref: "#/components/schemas/SystemEvent" }
+        permit_id: { type: integer, nullable: true }
 
     RawWeightEvent:
       type: object
@@ -1924,11 +1635,11 @@ components:
       properties:
         id: { type: integer }
         scale_id: { type: string }
+        scale_source_id: { type: string }
         weight: { type: number, format: float }
-        raw_payload: { type: string, description: "Unparsed raw weight data" }
         timestamp: { type: string, format: date-time }
         system_event_id: { type: integer }
-        system_event: { $ref: "#/components/schemas/SystemEvent" }
+        permit_id: { type: integer, nullable: true }
 
     SystemEvent:
       type: object
@@ -1956,30 +1667,19 @@ components:
         current_page: { type: integer }
         limit: { type: integer }
 
-    GateEvent:
-      type: object
-      properties:
-        id: { type: integer }
-        gate_id: { type: integer }
-        permit_id: { type: integer }
-        timestamp: { type: string, format: date-time }
-        plate_events:
-          type: array
-          items: { $ref: "#/components/schemas/RawPlateEvent" }
-        weight_events:
-          type: array
-          items: { $ref: "#/components/schemas/RawWeightEvent" }
-
     CustomsPost:
       type: object
       required: [name]
       properties:
         id: { type: integer }
         name: { type: string }
-        is_default: { type: boolean }
-        gates:
+        description: { type: string }
+        cameras:
           type: array
-          items: { $ref: "#/components/schemas/Gate" }
+          items: { $ref: "#/components/schemas/CameraConfig" }
+        scales:
+          type: array
+          items: { $ref: "#/components/schemas/ScaleConfig" }
 
     CustomsMode:
       type: object

@@ -41,7 +41,7 @@ func main() {
 		ingestLines.POST("/weight", handlers.HandleWeightIngest)
 	}
 
-	r.GET("/health", func(c *gin.Context) {
+	r.Match([]string{"GET", "HEAD"}, "/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 

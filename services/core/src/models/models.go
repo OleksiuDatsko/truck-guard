@@ -9,10 +9,11 @@ import (
 
 type CustomsPost struct {
 	gorm.Model
-	Name      string `json:"name"`
-	IsDefault bool   `json:"is_default" gorm:"default:false"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 
-	Gates []Gate `gorm:"foreignKey:CustomsPostID" json:"gates,omitempty"`
+	Cameras []CameraConfig `gorm:"foreignKey:CustomsPostID" json:"cameras,omitempty"`
+	Scales  []ScaleConfig  `gorm:"foreignKey:CustomsPostID" json:"scales,omitempty"`
 }
 
 type CustomsMode struct {
@@ -30,75 +31,34 @@ type Company struct {
 	LastSyncedAt *time.Time     `json:"last_synced_at"`
 }
 
-type CameraPreset struct {
-	gorm.Model
-	Name         string `json:"name"`
-	Format       string `json:"format"`
-	RunANPR      bool   `json:"run_anpr"`
-	FieldMapping string `json:"field_mapping"`
-
-	Cameras []CameraConfig `gorm:"foreignKey:PresetID" json:"cameras,omitempty"`
-}
-
 type CameraConfig struct {
 	gorm.Model
-	SourceID    string `gorm:"column:camera_id;uniqueIndex;not null" json:"camera_id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-
-	PresetID *uint         `json:"preset_id"`
-	Preset   *CameraPreset `gorm:"foreignKey:PresetID" json:"preset,omitempty"`
-
-	GateID *uint `json:"gate_id"`
-	Gate   *Gate `gorm:"foreignKey:GateID" json:"gate,omitempty"`
+	SourceID              string `gorm:"column:camera_id;uniqueIndex;not null" json:"camera_id"`
+	Name                  string `json:"name"`
+	Description           string `json:"description"`
+	Type                  string `json:"type"` // front, back
+	TriggerPermitCreation bool   `json:"trigger_permit_creation"`
 
 	Format       string `json:"format"`
 	RunANPR      *bool  `json:"run_anpr"`
 	FieldMapping string `json:"field_mapping"`
+
+	CustomsPostID *uint        `json:"customs_post_id"`
+	CustomsPost   *CustomsPost `gorm:"foreignKey:CustomsPostID" json:"customs_post,omitempty"`
 }
 
 type ScaleConfig struct {
 	gorm.Model
-	SourceID    string `gorm:"column:scale_id;uniqueIndex;not null" json:"scale_id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	SourceID              string `gorm:"column:scale_id;uniqueIndex;not null" json:"scale_id"`
+	Name                  string `json:"name"`
+	Description           string `json:"description"`
+	TriggerPermitCreation bool   `json:"trigger_permit_creation"`
 
 	Format       string `json:"format"`
 	FieldMapping string `json:"field_mapping"`
 
-	GateID *uint `json:"gate_id"`
-	Gate   *Gate `gorm:"foreignKey:GateID" json:"gate,omitempty"`
-}
-
-type Gate struct {
-	gorm.Model
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	IsEntry       bool   `json:"is_entry" gorm:"default:false"`
-	IsExit        bool   `json:"is_exit" gorm:"default:false"`
-	CustomsPostID *uint  `json:"customs_post_id"`
-
-	CustomsPost *CustomsPost   `gorm:"foreignKey:CustomsPostID" json:"customs_post,omitempty"`
-	Cameras     []CameraConfig `gorm:"foreignKey:GateID" json:"cameras,omitempty"`
-	Scales      []ScaleConfig  `gorm:"foreignKey:GateID" json:"scales,omitempty"`
-	FlowStep    *FlowStep      `gorm:"foreignKey:GateID" json:"flow_step,omitempty"`
-}
-
-type Flow struct {
-	gorm.Model
-	Name        string     `json:"name"`
-	Description string     `json:"description"`
-	Steps       []FlowStep `gorm:"foreignKey:FlowID" json:"steps"`
-}
-
-type FlowStep struct {
-	gorm.Model
-	FlowID   uint `json:"flow_id"`
-	GateID   uint `json:"gate_id"`
-	Sequence int  `json:"sequence"`
-
-	Gate *Gate `gorm:"foreignKey:GateID" json:"gate,omitempty"`
-	Flow *Flow `gorm:"foreignKey:FlowID" json:"flow,omitempty"`
+	CustomsPostID *uint        `json:"customs_post_id"`
+	CustomsPost   *CustomsPost `gorm:"foreignKey:CustomsPostID" json:"customs_post,omitempty"`
 }
 
 type VehicleType struct {
@@ -141,20 +101,28 @@ type PermitAudit struct {
 	Permit *Permit `gorm:"foreignKey:PermitID" json:"permit,omitempty"`
 }
 
+type PermitCustomsData struct {
+	gorm.Model
+	PermitID uint `gorm:"uniqueIndex" json:"permit_id"`
+
+	Declarant string `json:"declarant"`
+	Goods     string `json:"goods"`
+	Sender    string `json:"sender"`
+	Receiver  string `json:"receiver"`
+	VMDNumber string `json:"vmd_number"`
+}
+
 type Permit struct {
 	gorm.Model
-	// Flow & State
-	FlowID              *uint `json:"flow_id"`
-	Flow                *Flow `gorm:"foreignKey:FlowID" json:"flow,omitempty"`
-	CurrentStepSequence int   `json:"current_step_sequence"`
-	IsClosed            bool  `gorm:"default:false" json:"is_closed"`
-	IsVoid              bool  `gorm:"default:false" json:"is_void"`
+	IsClosed bool   `gorm:"default:false" json:"is_closed"`
+	IsVoid   bool   `gorm:"default:false" json:"is_void"`
+	Code     string `gorm:"uniqueIndex;not null" json:"code"`
 
 	// Customs & Document Info
 	CustomsPostID     *uint        `json:"customs_post_id"`
 	CustomsPost       *CustomsPost `gorm:"foreignKey:CustomsPostID" json:"customs_post,omitempty"`
 	DeclarationNumber string       `json:"declaration_number"`
-	CustomsModeCode   string       `json:"customs_mode_code"`
+	CustomsModeCode   *string      `json:"customs_mode_code"`
 	CustomsMode       *CustomsMode `gorm:"foreignKey:CustomsModeCode;references:Code" json:"customs_mode,omitempty"`
 	Notes             string       `json:"notes"`
 
@@ -180,27 +148,18 @@ type Permit struct {
 	LastActivityAt time.Time  `json:"last_activity_at"`
 
 	// Verification
-	CreatedBy  *uint      `json:"created_by"`
-	Creator    *User      `gorm:"foreignKey:CreatedBy" json:"creator,omitempty"`
-	VerifiedBy *uint      `json:"verified_by"`
-	Verifier   *User      `gorm:"foreignKey:VerifiedBy" json:"verifier,omitempty"`
-	VerifiedAt *time.Time `json:"verified_at"`
+	CreatedBy         *uint      `json:"created_by"`
+	Creator           *User      `gorm:"foreignKey:CreatedBy" json:"creator,omitempty"`
+	VerifiedBy        *uint      `json:"verified_by"`
+	Verifier          *User      `gorm:"foreignKey:VerifiedBy" json:"verifier,omitempty"`
+	VerifiedAt        *time.Time `json:"verified_at"`
+	ResponsibleUserID *uint      `json:"responsible_user_id"`
+	ResponsibleUser   *User      `gorm:"foreignKey:ResponsibleUserID" json:"responsible_user,omitempty"`
 
 	// Relations
-	GateEvents  []GateEvent   `gorm:"foreignKey:PermitID" json:"gate_events"`
-	AuditEvents []PermitAudit `gorm:"foreignKey:PermitID" json:"audit_events"`
-}
-
-type GateEvent struct {
-	gorm.Model
-	GateID uint `json:"gate_id"`
-	Gate   Gate `gorm:"foreignKey:GateID" json:"gate,omitempty"`
-
-	PermitID  *uint     `json:"permit_id"`
-	Timestamp time.Time `json:"timestamp"`
-
-	PlateEvents  []RawPlateEvent  `gorm:"foreignKey:GateEventID" json:"plate_events,omitempty"`
-	WeightEvents []RawWeightEvent `gorm:"foreignKey:GateEventID" json:"weight_events,omitempty"`
+	AuditEvents  []PermitAudit `gorm:"foreignKey:PermitID" json:"audit_events"`
+	PlateEvents  []PlateEvent  `gorm:"foreignKey:PermitID" json:"plate_events"`
+	WeightEvents []WeightEvent `gorm:"foreignKey:PermitID" json:"weight_events"`
 }
 
 type SystemEvent struct {
@@ -210,52 +169,54 @@ type SystemEvent struct {
 	Payload   string    `json:"payload"`
 	Timestamp time.Time `json:"timestamp"`
 
-	PlateEvent  *RawPlateEvent  `gorm:"foreignKey:SystemEventID" json:"plate_event,omitempty"`
-	WeightEvent *RawWeightEvent `gorm:"foreignKey:SystemEventID" json:"weight_event,omitempty"`
+	PlateEvent  *PlateEvent  `gorm:"foreignKey:SystemEventID" json:"plate_event,omitempty"`
+	WeightEvent *WeightEvent `gorm:"foreignKey:SystemEventID" json:"weight_event,omitempty"`
 }
 
-type RawPlateEvent struct {
+type PlateEvent struct {
 	gorm.Model
-	CameraSourceID   string    `gorm:"column:camera_source_id" json:"camera_source_id"`
-	CameraSourceName string    `gorm:"column:camera_source_name" json:"camera_source_name"`
-	CameraID         string    `gorm:"column:camera_id" json:"camera_id"`
-	Plate            string    `json:"plate"`
-	PlateCorrected   string    `json:"plate_corrected"`
-	CorrectedBy      string    `json:"corrected_by"`
-	IsManual         bool      `gorm:"default:false" json:"is_manual"`
-	ImageKey         string    `json:"image_key"`
-	Timestamp        time.Time `json:"timestamp"`
-	Suggestions      string    `gorm:"type:jsonb" json:"suggestions"`
+	CameraSourceID   string         `gorm:"column:camera_source_id" json:"camera_source_id"`
+	CameraSourceName string         `gorm:"column:camera_source_name" json:"camera_source_name"`
+	CameraID         string         `gorm:"column:camera_id" json:"camera_id"`
+	Plate            string         `json:"plate"`
+	PlateCorrected   string         `json:"plate_corrected"`
+	CorrectedBy      string         `json:"corrected_by"`
+	IsManual         bool           `gorm:"default:false" json:"is_manual"`
+	ImageKey         string         `json:"image_key"`
+	Timestamp        time.Time      `json:"timestamp"`
+	Suggestions      datatypes.JSON `gorm:"type:jsonb" json:"suggestions"`
 
-	Camera CameraConfig `gorm:"references:CameraID" json:"-"`
+	Camera CameraConfig `gorm:"foreignKey:CameraID;references:SourceID" json:"-"`
 
 	SystemEventID uint         `json:"system_event_id"`
 	SystemEvent   *SystemEvent `gorm:"foreignKey:SystemEventID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 
-	GateEventID *uint      `json:"gate_event_id"`
-	GateEvent   *GateEvent `gorm:"foreignKey:GateEventID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
+	PermitID *uint   `json:"permit_id"`
+	Permit   *Permit `gorm:"foreignKey:PermitID" json:"permit,omitempty"`
 }
 
-type RawWeightEvent struct {
+type WeightEvent struct {
 	gorm.Model
 	ScaleSourceID string    `json:"scale_source_id"`
 	ScaleID       string    `gorm:"column:scale_id" json:"scale_id"`
 	Weight        float64   `json:"weight"`
 	Timestamp     time.Time `json:"timestamp"`
 
-	Scale ScaleConfig `gorm:"references:ScaleID" json:"-"`
+	Scale ScaleConfig `gorm:"foreignKey:ScaleID;references:SourceID" json:"-"`
 
 	SystemEventID uint         `json:"system_event_id"`
 	SystemEvent   *SystemEvent `gorm:"foreignKey:SystemEventID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 
-	GateEventID *uint      `json:"gate_event_id"`
-	GateEvent   *GateEvent `gorm:"foreignKey:GateEventID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
+	PermitID *uint   `json:"permit_id"`
+	Permit   *Permit `gorm:"foreignKey:PermitID" json:"permit,omitempty"`
 }
 
 type SystemSetting struct {
 	gorm.Model
-	Key   string `gorm:"uniqueIndex;not null" json:"key"`
-	Value string `json:"value"`
+	Key         string `gorm:"uniqueIndex;not null" json:"key"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Value       string `json:"value"`
 }
 
 type ExcludedPlate struct {
