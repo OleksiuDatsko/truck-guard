@@ -36,31 +36,31 @@ func main() {
 	r.POST("/login", handlers.HandleLogin)
 	r.GET("/validate", handlers.HandleValidate)
 	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
-	r.POST("/register", middleware.RequirePermission("create:users"), handlers.HandleRegister)
+	r.POST("/register", handlers.HandleRegister)
 
 	admin := r.Group("/admin")
 	{
 		// Користувачі
-		admin.GET("/users", middleware.RequirePermission("read:users"), handlers.HandleListUsers)
-		admin.GET("/users/:id", middleware.RequirePermission("read:users"), handlers.HandleGetUser)
-		admin.PUT("/users/:id/role", middleware.RequirePermission("update:users"), handlers.HandleUpdateUserRole)
-		admin.DELETE("/users/:id", middleware.RequirePermission("delete:users"), handlers.HandleDeleteUser)
+		admin.GET("/users", handlers.HandleListUsers)
+		admin.GET("/users/:id", handlers.HandleGetUser)
+		admin.PUT("/users/:id/role", handlers.HandleUpdateUserRole)
+		admin.DELETE("/users/:id", handlers.HandleDeleteUser)
 
 		// Ролі
-		admin.GET("/roles", middleware.RequirePermission("read:roles"), handlers.HandleListRoles)
-		admin.POST("/roles", middleware.RequirePermission("create:roles"), handlers.HandleCreateRole)
-		admin.PUT("/roles/:id", middleware.RequirePermission("update:roles"), handlers.HandleUpdateRole)
-		admin.DELETE("/roles/:id", middleware.RequirePermission("delete:roles"), handlers.HandleDeleteRole)
-		admin.POST("/roles/:id/permissions", middleware.RequirePermission("update:roles"), handlers.HandleAssignPermissionsToRole)
+		admin.GET("/roles", handlers.HandleListRoles)
+		admin.POST("/roles", handlers.HandleCreateRole)
+		admin.PUT("/roles/:id", handlers.HandleUpdateRole)
+		admin.DELETE("/roles/:id", handlers.HandleDeleteRole)
+		admin.POST("/roles/:id/permissions", handlers.HandleAssignPermissionsToRole)
 
 		// Ключі (IoT)
-		admin.GET("/keys", middleware.RequirePermission("read:keys"), handlers.HandleListKeys)
-		admin.POST("/keys", middleware.RequirePermission("create:keys"), handlers.HandleCreateKeyWithPerms)
-		admin.DELETE("/keys/:id", middleware.RequirePermission("delete:keys"), handlers.HandleDeleteKey)
-		admin.PUT("/keys/:id/permissions", middleware.RequirePermission("update:keys"), handlers.HandleAssignPermissionsToKey)
-		admin.PUT("/keys/:id", middleware.RequirePermission("update:keys"), handlers.HandleUpdateKey)
+		admin.GET("/keys", handlers.HandleListKeys)
+		admin.POST("/keys", handlers.HandleCreateKeyWithPerms)
+		admin.DELETE("/keys/:id", handlers.HandleDeleteKey)
+		admin.PUT("/keys/:id/permissions", handlers.HandleAssignPermissionsToKey)
+		admin.PUT("/keys/:id", handlers.HandleUpdateKey)
 
-		admin.GET("/permissions", middleware.RequirePermission("read:roles"), handlers.HandleListPermissions)
+		admin.GET("/permissions", handlers.HandleListPermissions)
 	}
 
 	port := os.Getenv("PORT")

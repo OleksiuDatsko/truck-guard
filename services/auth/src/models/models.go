@@ -40,3 +40,11 @@ type SourceMetadata struct {
 	Name        string   `json:"name"`
 	Permissions []string `json:"permissions"`
 }
+
+type PolicyRule struct {
+	ID                 uint   `gorm:"primaryKey" json:"id"`
+	Method             string `gorm:"not null" json:"method"`              // GET, POST, PUT, DELETE, *
+	PathPattern        string `gorm:"not null;index" json:"path_pattern"`  // Regex: ^/api/users.*
+	RequiredPermission string `gorm:"not null" json:"required_permission"` // Наприклад, read:users
+	Description        string `json:"description"`
+}

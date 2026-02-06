@@ -1,11 +1,10 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { AuthClient } from '$lib/server/auth-client';
-import { CoreClient } from '$lib/server/core-client';
+import { can } from '$lib/auth';
 
 export const load: PageServerLoad = async ({ locals, cookies }) => {
     // Permission check
-    if (!locals.user?.permissions?.includes('create:users')) {
+    if (!can(locals.user, 'create:users')) {
         throw redirect(303, '/admin/users?error=You do not have permission to create users');
     }
 
@@ -19,7 +18,7 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 export const actions: Actions = {
     default: async ({ request, locals, cookies }) => {
         // Permission check
-        if (!locals.user?.permissions?.includes('create:users')) {
+        if (!can(locals.user, 'create:users')) {
             return fail(403, { error: 'You do not have permission to create users' });
         }
 

@@ -1,5 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail } from '@sveltejs/kit';
+import { can } from '$lib/auth';
 
 export const load: PageServerLoad = async ({ locals }) => {
     const authUsers = await locals.authClient.listUsers();
@@ -27,7 +28,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
     delete: async ({ request, locals }) => {
-        if (!locals.user?.permissions?.includes('delete:users')) {
+        if (!can(locals.user, 'delete:users')) {
             return fail(403, { error: 'You do not have permission to delete users' });
         }
 

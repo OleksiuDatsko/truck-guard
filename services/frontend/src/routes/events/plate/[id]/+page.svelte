@@ -16,6 +16,7 @@
     Eye,
     Pencil,
   } from "@lucide/svelte";
+  import { can } from "$lib/auth";
   import { toast } from "svelte-sonner";
 
   let { data } = $props();
@@ -23,9 +24,7 @@
   let event = $state(data.event);
   const user = $derived(data.user);
 
-  const canEdit = $derived(
-    user?.permissions?.includes("update:events") ?? false,
-  );
+  const canEdit = $derived(can(user, "update:events"));
 
   let isEditing = $state(false);
   let loading = $state(false);
@@ -69,7 +68,9 @@
 
   <div class="grid gap-6 md:grid-cols-2">
     <!-- Image Section -->
-    <Card.Root class="overflow-hidden md:col-span-1 shadow-lg bg-card/50 gap-0 py-0">
+    <Card.Root
+      class="overflow-hidden md:col-span-1 shadow-lg bg-card/50 gap-0 py-0"
+    >
       <Card.Content
         class="p-0 relative aspect-video bg-black/5 flex items-center justify-center h-full min-h-[300px]"
       >

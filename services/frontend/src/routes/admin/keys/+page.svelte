@@ -11,10 +11,11 @@
   import type { APIKey, Permission } from "$lib/server/auth-client";
   import Pencil from "@lucide/svelte/icons/pencil";
   import Trash2 from "@lucide/svelte/icons/trash-2";
-  import Shield from "@lucide/svelte/icons/shield";
   import Plus from "@lucide/svelte/icons/plus";
+  import Shield from "@lucide/svelte/icons/shield";
   import Copy from "@lucide/svelte/icons/copy";
   import { toast } from "svelte-sonner";
+  import { can } from "$lib/auth";
 
   let { data }: { data: PageData } = $props();
 
@@ -80,8 +81,8 @@
     toast.success("Скопійовано в буфер обміну");
   }
 
-  function can(permission: string): boolean {
-    return data.user?.permissions?.includes(permission) ?? false;
+  function canAccess(permission: string): boolean {
+    return can(data.user, permission);
   }
 </script>
 
@@ -93,7 +94,7 @@
         Керування ключами доступу для зовнішніх інтеграцій.
       </p>
     </div>
-    {#if can("create:keys")}
+    {#if canAccess("create:keys")}
       <Button onclick={openCreate}>
         <Plus class="mr-2 h-4 w-4" />
         Створити ключ
@@ -130,7 +131,7 @@
             </Table.Cell>
             <Table.Cell>{new Date(key.created_at).toLocaleString()}</Table.Cell>
             <Table.Cell class="text-right space-x-2">
-              {#if can("update:keys")}
+              {#if canAccess("update:keys")}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -148,7 +149,7 @@
                   <Pencil class="h-4 w-4" />
                 </Button>
               {/if}
-              {#if can("delete:keys")}
+              {#if canAccess("delete:keys")}
                 <!-- Don't allow to delete default system worker key -->
                 <Button
                   variant="ghost"
@@ -216,6 +217,7 @@
                       value={perm.id}
                       checked={selectedPermissions.includes(perm.id)}
                       onCheckedChange={() => togglePermission(perm.id)}
+                      disabled={!canAccess(perm.id)}
                     />
                     <Label
                       for="new-perm-{perm.id}"
@@ -377,6 +379,7 @@
                       value={perm.id}
                       checked={selectedPermissions.includes(perm.id)}
                       onCheckedChange={() => togglePermission(perm.id)}
+                      disabled={!canAccess(perm.id)}
                     />
                     <div class="grid gap-1.5 leading-none">
                       <Label

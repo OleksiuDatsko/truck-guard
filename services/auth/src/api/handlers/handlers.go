@@ -86,57 +86,90 @@ func HandleLogin(c *gin.Context) {
 }
 
 func HandleValidate(c *gin.Context) {
+	origURI := c.GetHeader("X-Original-URI")
+	origMethod := c.GetHeader("X-Original-Method")
+
+	var perms []string
+	var userID string
+	var sourceID string
+	var sourceName string
+
+	// 1. Check API Key
 	k := c.GetHeader("X-API-Key")
 	if k != "" {
 		if meta, valid := repository.ValidateKeyAndGetMetadata(k); valid {
-			slog.Debug("Validating API Key", "key_id", meta.ID, "source", meta.Name)
-			c.Header("X-Source-ID", meta.ID)
-			c.Header("X-Source-Name", meta.Name)
-			c.Header("X-Permissions", strings.Join(meta.Permissions, ","))
-			c.Status(200)
+			sourceID = meta.ID
+			sourceName = meta.Name
+			perms = meta.Permissions
+		} else {
+			slog.Warn("Invalid API Key attempted", "key_prefix", k[:4]+"...")
+			c.Status(401)
 			return
 		}
-		slog.Warn("Invalid API Key attempted", "key_prefix", k[:4]+"...")
-	}
-
-	var tokenString string
-
-	authHeader := c.GetHeader("Authorization")
-	if strings.HasPrefix(authHeader, "Bearer ") {
-		tokenString = strings.TrimPrefix(authHeader, "Bearer ")
-	}
-
-	if tokenString == "" {
-		if cookie, err := c.Cookie("session"); err == nil {
-			tokenString = cookie
+	} else {
+		// 2. Check JWT Token
+		var tokenString string
+		authHeader := c.GetHeader("Authorization")
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			tokenString = strings.TrimPrefix(authHeader, "Bearer ")
 		}
-	}
+		if tokenString == "" {
+			if cookie, err := c.Cookie("session"); err == nil {
+				tokenString = cookie
+			}
+		}
 
-	if tokenString != "" {
-		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
-			return repository.JWTSecret, nil
-		})
+		if tokenString != "" {
+			token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+				return repository.JWTSecret, nil
+			})
 
-		if err == nil && token.Valid {
-			if claims, ok := token.Claims.(jwt.MapClaims); ok {
-				userIDFloat, ok := claims["user_id"].(float64)
-				if !ok {
-					c.Status(401)
-					return
+			if err == nil && token.Valid {
+				if claims, ok := token.Claims.(jwt.MapClaims); ok {
+					userIDFloat, ok := claims["user_id"].(float64)
+					if ok {
+						uID := uint(userIDFloat)
+						perms = repository.GetUserPermissions(uID)
+						userID = fmt.Sprintf("%d", uID)
+					}
 				}
-				userID := uint(userIDFloat)
-
-				perms := repository.GetUserPermissions(userID)
-
-				c.Header("X-Permissions", strings.Join(perms, ","))
-				c.Header("X-User-ID", fmt.Sprintf("%d", userID))
-
-				c.Status(200)
-				return
 			}
 		}
 	}
-	c.Status(401)
+
+	// 3. Authenticated?
+	if perms == nil && userID == "" && sourceID == "" {
+		slog.Warn("Validation failed: no identity provided", "method", origMethod, "uri", origURI)
+		c.Status(401)
+		return
+	}
+
+	// 4. Centralized Authorization Check
+	if origURI != "" {
+		allowed, err := repository.EvaluateAccess(origMethod, origURI, perms)
+		if err != nil {
+			slog.Error("Policy evaluation failed", "error", err)
+			c.Status(500)
+			return
+		}
+		if !allowed {
+			slog.Warn("Centralized access denied", "method", origMethod, "uri", origURI, "user_id", userID, "source_id", sourceID)
+			c.Status(403)
+			return
+		}
+	}
+
+	// 5. Success - Set Headers
+	c.Header("X-Permissions", strings.Join(perms, ","))
+	if userID != "" {
+		c.Header("X-User-ID", userID)
+	}
+	if sourceID != "" {
+		c.Header("X-Source-ID", sourceID)
+		c.Header("X-Source-Name", sourceName)
+	}
+
+	c.Status(200)
 }
 
 func HandleListPermissions(c *gin.Context) {
@@ -181,6 +214,17 @@ func HandleAssignPermissionsToRole(c *gin.Context) {
 
 	var perms []models.Permission
 	repository.DB.WithContext(c.Request.Context()).Where("id IN ?", b.PermissionIDs).Find(&perms)
+
+	// Permission escalation prevention
+	actorPerms := strings.Split(c.GetHeader("X-Permissions"), ",")
+	targetPermIDs := make([]string, len(perms))
+	for i, p := range perms {
+		targetPermIDs[i] = p.ID
+	}
+	if err := repository.ValidatePermissions(actorPerms, targetPermIDs); err != nil {
+		c.JSON(403, gin.H{"error": err.Error()})
+		return
+	}
 
 	if err := repository.DB.WithContext(c.Request.Context()).Model(&role).Association("Permissions").Replace(perms); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
@@ -238,6 +282,17 @@ func HandleCreateKeyWithPerms(c *gin.Context) {
 	var perms []models.Permission
 	repository.DB.WithContext(c.Request.Context()).Where("id IN ?", b.PermissionIDs).Find(&perms)
 
+	// Permission escalation prevention
+	actorPerms := strings.Split(c.GetHeader("X-Permissions"), ",")
+	targetPermIDs := make([]string, len(perms))
+	for i, p := range perms {
+		targetPermIDs[i] = p.ID
+	}
+	if err := repository.ValidatePermissions(actorPerms, targetPermIDs); err != nil {
+		c.JSON(403, gin.H{"error": err.Error()})
+		return
+	}
+
 	key := models.APIKey{
 		KeyHash:     repository.HashKey(rk),
 		OwnerName:   b.Name,
@@ -292,6 +347,17 @@ func HandleAssignPermissionsToKey(c *gin.Context) {
 
 	var perms []models.Permission
 	repository.DB.WithContext(c.Request.Context()).Where("id IN ?", b.PermissionIDs).Find(&perms)
+
+	// Permission escalation prevention
+	actorPerms := strings.Split(c.GetHeader("X-Permissions"), ",")
+	targetPermIDs := make([]string, len(perms))
+	for i, p := range perms {
+		targetPermIDs[i] = p.ID
+	}
+	if err := repository.ValidatePermissions(actorPerms, targetPermIDs); err != nil {
+		c.JSON(403, gin.H{"error": err.Error()})
+		return
+	}
 
 	repository.DB.WithContext(c.Request.Context()).Model(&key).Association("Permissions").Replace(perms)
 

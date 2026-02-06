@@ -10,92 +10,69 @@ import (
 
 func seedData() {
 	perms := []models.Permission{
-		// Модуль: Авторизація
-		{ID: "read:users", Name: "Перегляд користувачів", Description: "Дозволяє переглядати список користувачів та їх деталі", Module: "auth"},
-		{ID: "create:users", Name: "Створення користувачів", Description: "Дозволяє створювати нових користувачів", Module: "auth"},
-		{ID: "update:users", Name: "Оновлення користувачів", Description: "Дозволяє редагувати дані користувачів", Module: "auth"},
-		{ID: "delete:users", Name: "Видалення користувачів", Description: "Дозволяє видаляти користувачів", Module: "auth"},
-		{ID: "read:roles", Name: "Перегляд ролей", Description: "Дозволяє переглядати список ролей", Module: "auth"},
-		{ID: "create:roles", Name: "Створення ролей", Description: "Дозволяє створювати нові ролі", Module: "auth"},
-		{ID: "update:roles", Name: "Оновлення ролей", Description: "Дозволяє редагувати існуючі ролі", Module: "auth"},
-		{ID: "delete:roles", Name: "Видалення ролей", Description: "Дозволяє видаляти ролі", Module: "auth"},
-		{ID: "manage:settings", Name: "Керування налаштуваннями", Description: "Доступ до налаштувань системи", Module: "auth"},
-		{ID: "view:audit", Name: "Перегляд аудиту", Description: "Доступ до журналу аудиту", Module: "auth"},
-		{ID: "auth:login", Name: "Доступ до входу", Description: "Дозвіл на вхід в систему", Module: "auth"},
-		{ID: "self:profile", Name: "Власний профіль", Description: "Доступ до власного профілю", Module: "auth"},
-		{ID: "read:keys", Name: "Перегляд API ключів", Description: "Дозволяє переглядати API ключі", Module: "auth"},
-		{ID: "create:keys", Name: "Створення API ключів", Description: "Дозволяє створювати API ключі", Module: "auth"},
-		{ID: "update:keys", Name: "Оновлення API ключів", Description: "Дозволяє редагувати API ключі", Module: "auth"},
-		{ID: "delete:keys", Name: "Видалення API ключів", Description: "Дозволяє видаляти API ключі", Module: "auth"},
+		// Auth
+		{ID: "read:users", Name: "Користувачі: Перегляд", Module: "auth"},
+		{ID: "create:users", Name: "Користувачі: Створення", Module: "auth"},
+		{ID: "update:users", Name: "Користувачі: Редагування", Module: "auth"},
+		{ID: "delete:users", Name: "Користувачі: Видалення", Module: "auth"},
+		{ID: "manage:users", Name: "Користувачі: Повний доступ", Module: "auth"},
 
-		// Модуль: Інджектор
-		{ID: "create:ingest", Name: "Створення даних імпорту", Description: "Дозволяє імпортувати дані з зовнішніх джерел", Module: "ingestor"},
+		{ID: "read:roles", Name: "Ролі: Перегляд", Module: "auth"},
+		{ID: "manage:roles", Name: "Ролі: Повний доступ", Module: "auth"},
 
-		// Модуль: Ядро (Core)
-		{ID: "read:trips", Name: "Перегляд поїздок", Description: "Дозволяє переглядати історію поїздок", Module: "core"},
-		{ID: "create:events", Name: "Створення подій", Description: "Дозволяє створювати події (наприклад, розпізнавання номерів)", Module: "core"},
-		{ID: "update:events", Name: "Оновлення подій", Description: "Дозволяє редагувати події", Module: "core"},
-		{ID: "read:events", Name: "Перегляд подій", Description: "Дозволяє переглядати список подій", Module: "core"},
-		{ID: "read:cameras", Name: "Перегляд камер", Description: "Дозволяє переглядати список камер", Module: "core"},
-		{ID: "create:cameras", Name: "Створення камер", Description: "Дозволяє додавати нові камери", Module: "core"},
-		{ID: "update:cameras", Name: "Оновлення камер", Description: "Дозволяє редагувати налаштування камер", Module: "core"},
-		{ID: "delete:cameras", Name: "Видалення камер", Description: "Дозволяє видаляти камери", Module: "core"},
-		{ID: "manage:configs", Name: "Керування конфігураціями", Description: "Доступ до конфігурацій ядра", Module: "core"},
-		{ID: "read:presets", Name: "Перегляд пресетів", Description: "Дозволяє переглядати пресети конфігурацій", Module: "core"},
-		{ID: "create:presets", Name: "Створення пресетів", Description: "Дозволяє створювати пресети", Module: "core"},
-		{ID: "update:presets", Name: "Оновлення пресетів", Description: "Дозволяє оновлювати пресети", Module: "core"},
-		{ID: "delete:presets", Name: "Видалення пресетів", Description: "Дозволяє видаляти пресети", Module: "core"},
-		{ID: "read:scales", Name: "Перегляд ваг", Description: "Дозволяє переглядати список ваг", Module: "core"},
-		{ID: "create:scales", Name: "Створення ваг", Description: "Дозволяє додавати ваги", Module: "core"},
-		{ID: "update:scales", Name: "Оновлення ваг", Description: "Дозволяє редагувати ваги", Module: "core"},
-		{ID: "delete:scales", Name: "Видалення ваг", Description: "Дозволяє видаляти ваги", Module: "core"},
-		{ID: "read:gates", Name: "Перегляд воріт", Description: "Дозволяє переглядати список воріт", Module: "core"},
-		{ID: "create:gates", Name: "Створення воріт", Description: "Дозволяє створювати ворота", Module: "core"},
-		{ID: "update:gates", Name: "Оновлення воріт", Description: "Дозволяє редагувати ворота", Module: "core"},
-		{ID: "delete:gates", Name: "Видалення воріт", Description: "Дозволяє видаляти ворота", Module: "core"},
-		{ID: "read:settings", Name: "Перегляд налаштувань", Description: "Дозволяє переглядати системні налаштування", Module: "core"},
-		{ID: "update:settings", Name: "Оновлення налаштувань", Description: "Дозволяє змінювати системні налаштування", Module: "core"},
-		{ID: "read:excluded_plates", Name: "Перегляд виключених номерів", Description: "Дозволяє переглядати чорний список номерів", Module: "core"},
-		{ID: "create:excluded_plates", Name: "Створення виключених номерів", Description: "Дозволяє додавати номери до чорного списку", Module: "core"},
-		{ID: "delete:excluded_plates", Name: "Видалення виключених номерів", Description: "Дозволяє видаляти номери з чорного списку", Module: "core"},
-		{ID: "read:permits", Name: "Перегляд перепусток", Description: "Дозволяє переглядати перепустки (для оператора - тільки по своєму посту)", Module: "core"},
-		{ID: "read:permits:all", Name: "Перегляд всіх перепусток", Description: "Дозволяє переглядати всі перепустки незалежно від посту", Module: "core"},
-		{ID: "read:flows", Name: "Перегляд потоків", Description: "Дозволяє переглядати налаштовані потоки", Module: "core"},
-		{ID: "create:flows", Name: "Створення потоків", Description: "Дозволяє створювати нові потоки", Module: "core"},
-		{ID: "update:flows", Name: "Оновлення потоків", Description: "Дозволяє редагувати потоки", Module: "core"},
-		{ID: "delete:flows", Name: "Видалення потоків", Description: "Дозволяє видаляти потоки", Module: "core"},
+		{ID: "read:keys", Name: "API Ключі: Перегляд", Module: "auth"},
+		{ID: "manage:keys", Name: "API Ключі: Повний доступ", Module: "auth"},
+
+		// Ingest
+		{ID: "create:ingest", Name: "Імпорт: Створення", Module: "ingestor"},
+
+		// Core
+		{ID: "read:cameras", Name: "Камери: Перегляд", Module: "core"},
+		{ID: "manage:cameras", Name: "Камери: Повний доступ", Module: "core"},
+
+		{ID: "read:scales", Name: "Ваги: Перегляд", Module: "core"},
+		{ID: "manage:scales", Name: "Ваги: Повний доступ", Module: "core"},
+
+		{ID: "read:events", Name: "Події: Перегляд", Module: "core"},
+		{ID: "create:events", Name: "Події: Створення", Module: "core"},
+		{ID: "update:events", Name: "Події: Корекція", Module: "core"},
+
+		{ID: "read:permits", Name: "Перепустки: Перегляд", Module: "core"},
+		{ID: "create:permits", Name: "Перепустки: Створення", Module: "core"},
+		{ID: "update:permits", Name: "Перепустки: Редагування", Module: "core"},
+
+		{ID: "read:settings", Name: "Налаштування: Перегляд", Module: "core"},
+		{ID: "update:settings", Name: "Налаштування: Зміна", Module: "core"},
+		{ID: "manage:settings", Name: "Налаштування: Повний доступ", Module: "core"},
+
+		{ID: "read:audit", Name: "Аудит: Перегляд", Module: "auth"},
 	}
 
 	for _, p := range perms {
 		repository.DB.Save(&p)
 	}
 
+	// 1. Адмін - має все
 	var adminRole models.Role
-	repository.DB.FirstOrCreate(&adminRole, models.Role{Name: "admin", Description: "Повний доступ"})
+	repository.DB.FirstOrCreate(&adminRole, models.Role{Name: "admin", Description: "Повний доступ до системи"})
 	repository.DB.Model(&adminRole).Association("Permissions").Replace(perms)
 
+	// 2. Менеджер - може редагувати, але не видаляти (ієрархія 'update' включає 'read')
 	var managerRole models.Role
-	repository.DB.FirstOrCreate(&managerRole, models.Role{Name: "manager", Description: "Керуючий"})
-	// Grant manager permissions (all read + specific manage)
-	managerPerms := []models.Permission{}
-	permIDs := []string{
-		"read:users", "read:roles", "read:keys", "view:audit", "self:profile",
-		"read:trips", "read:events", "read:cameras", "read:scales", "read:gates", "read:settings",
-		"read:excluded_plates", "create:excluded_plates", "delete:excluded_plates",
-		"read:permits:all", "read:permits", "read:flows",
+	repository.DB.FirstOrCreate(&managerRole, models.Role{Name: "manager", Description: "Керівник (редагування без видалення)"})
+	managerPermIDs := []string{
+		"update:users", "update:permits", "update:events", "update:settings",
+		"update:cameras", "update:scales", "read:roles", "read:keys",
 	}
-	repository.DB.Where("id IN ?", permIDs).Find(&managerPerms)
+	managerPerms := []models.Permission{}
+	repository.DB.Where("id IN ?", managerPermIDs).Find(&managerPerms)
 	repository.DB.Model(&managerRole).Association("Permissions").Replace(managerPerms)
 
+	// 3. Оператор - тільки перегляд та створення подій/перепусток
 	var operatorRole models.Role
-	repository.DB.FirstOrCreate(&operatorRole, models.Role{Name: "operator", Description: "Стандартний доступ"})
-
-	// Refine operator permissions
+	repository.DB.FirstOrCreate(&operatorRole, models.Role{Name: "operator", Description: "Оператор (перегляд та створення)"})
 	operatorPermIDs := []string{
-		"self:profile", "auth:login",
-		"read:permits", // Scope restricted
-		"read:events",
-		"read:gates",
+		"read:permits", "create:permits", "read:events", "create:events", "read:cameras",
 	}
 	operatorPerms := []models.Permission{}
 	repository.DB.Where("id IN ?", operatorPermIDs).Find(&operatorPerms)
@@ -140,6 +117,70 @@ func seedData() {
 			}
 			repository.DB.Create(&newKey)
 			println("API ключ для системного воркера успішно додано")
+		}
+	}
+
+	rules := []models.PolicyRule{
+		// Auth Service
+		{Method: "POST", PathPattern: `^/auth/register$`, RequiredPermission: "create:users", Description: "Реєстрація користувачів"},
+		{Method: "GET", PathPattern: `^/auth/admin/users.*`, RequiredPermission: "read:users", Description: "Перегляд користувачів"},
+		{Method: "PUT", PathPattern: `^/auth/admin/users/.*/role$`, RequiredPermission: "update:users", Description: "Зміна ролі користувача"},
+		{Method: "DELETE", PathPattern: `^/auth/admin/users/.*`, RequiredPermission: "delete:users", Description: "Видалення користувача"},
+		{Method: "GET", PathPattern: `^/auth/admin/roles.*`, RequiredPermission: "read:roles", Description: "Перегляд ролей"},
+		{Method: "POST", PathPattern: `^/auth/admin/roles.*`, RequiredPermission: "manage:roles", Description: "Створення ролей"},
+		{Method: "*", PathPattern: `^/auth/admin/roles/.*`, RequiredPermission: "manage:roles", Description: "Керування ролями"},
+		{Method: "GET", PathPattern: `^/auth/admin/keys.*`, RequiredPermission: "read:keys", Description: "Перегляд ключів"},
+		{Method: "POST", PathPattern: `^/auth/admin/keys.*`, RequiredPermission: "manage:keys", Description: "Створення ключів"},
+		{Method: "*", PathPattern: `^/auth/admin/keys/.*`, RequiredPermission: "manage:keys", Description: "Керування ключами"},
+		{Method: "GET", PathPattern: `^/auth/admin/permissions$`, RequiredPermission: "read:roles", Description: "Список всіх дозволів"},
+
+		// Ingestor Service
+		{Method: "POST", PathPattern: `^/ingest/.*`, RequiredPermission: "create:ingest", Description: "Імпорт даних"},
+
+		// Core Service: CONFIGS
+		{Method: "GET", PathPattern: `^/api/configs/cameras.*`, RequiredPermission: "read:cameras", Description: "Перегляд камер"},
+		{Method: "POST", PathPattern: `^/api/configs/cameras.*`, RequiredPermission: "manage:cameras", Description: "Додавання камер"},
+		{Method: "PUT", PathPattern: `^/api/configs/cameras/.*`, RequiredPermission: "manage:cameras", Description: "Редагування камер"},
+		{Method: "DELETE", PathPattern: `^/api/configs/cameras/.*`, RequiredPermission: "manage:cameras", Description: "Видалення камер"},
+
+		{Method: "GET", PathPattern: `^/api/configs/scales.*`, RequiredPermission: "read:scales", Description: "Перегляд ваг"},
+		{Method: "POST", PathPattern: `^/api/configs/scales.*`, RequiredPermission: "manage:scales", Description: "Додавання ваг"},
+		{Method: "PUT", PathPattern: `^/api/configs/scales/.*`, RequiredPermission: "manage:scales", Description: "Редагування ваг"},
+		{Method: "DELETE", PathPattern: `^/api/configs/scales/.*`, RequiredPermission: "manage:scales", Description: "Видалення ваг"},
+
+		{Method: "GET", PathPattern: `^/api/configs/settings.*`, RequiredPermission: "read:settings", Description: "Перегляд налаштувань"},
+		{Method: "POST", PathPattern: `^/api/configs/settings.*`, RequiredPermission: "update:settings", Description: "Зміна налаштувань"},
+
+		{Method: "GET", PathPattern: `^/api/configs/excluded-plates.*`, RequiredPermission: "read:settings", Description: "Перегляд чорного списку"},
+		{Method: "POST", PathPattern: `^/api/configs/excluded-plates.*`, RequiredPermission: "update:settings", Description: "Додавання у чорний список"},
+		{Method: "DELETE", PathPattern: `^/api/configs/excluded-plates/.*`, RequiredPermission: "update:settings", Description: "Видалення з чорного списку"},
+
+		// Core Service: DATA
+		{Method: "GET", PathPattern: `^/api/data/.*`, RequiredPermission: "read:settings", Description: "Перегляд довідників"},
+		{Method: "*", PathPattern: `^/api/data/.*`, RequiredPermission: "manage:settings", Description: "Керування довідниками"},
+
+		// Core Service: EVENTS
+		{Method: "GET", PathPattern: `^/api/events/.*`, RequiredPermission: "read:events", Description: "Перегляд подій"},
+		{Method: "POST", PathPattern: `^/api/events/.*`, RequiredPermission: "create:events", Description: "Реєстрація подій"},
+		{Method: "PATCH", PathPattern: `^/api/events/plate/.*`, RequiredPermission: "update:events", Description: "Корекція номерів"},
+
+		// Core Service: PERMITS
+		{Method: "GET", PathPattern: `^/api/permits.*`, RequiredPermission: "read:permits", Description: "Перегляд перепусток"},
+		{Method: "POST", PathPattern: `^/api/permits.*`, RequiredPermission: "create:permits", Description: "Створення перепусток"},
+		{Method: "PUT", PathPattern: `^/api/permits/.*`, RequiredPermission: "update:permits", Description: "Оновлення перепусток"},
+
+		// Core Service: USERS
+		{Method: "GET", PathPattern: `^/api/users$`, RequiredPermission: "read:users", Description: "Список профілів"},
+		{Method: "GET", PathPattern: `^/api/users/me`, RequiredPermission: "", Description: "Мій профіль"},
+		{Method: "PUT", PathPattern: `^/api/users/me`, RequiredPermission: "", Description: "Оновлення мого профілю"},
+		{Method: "POST", PathPattern: `^/api/users/$`, RequiredPermission: "create:users", Description: "Створення профілю"},
+		{Method: "*", PathPattern: `^/api/users/.*`, RequiredPermission: "update:users", Description: "Керування профілями"},
+	}
+
+	for _, r := range rules {
+		var existing models.PolicyRule
+		if err := repository.DB.Where("method = ? AND path_pattern = ?", r.Method, r.PathPattern).First(&existing).Error; err != nil {
+			repository.DB.Create(&r)
 		}
 	}
 }

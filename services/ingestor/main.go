@@ -35,7 +35,7 @@ func main() {
 	r.Use(middleware.Logger())
 	r.Use(otelgin.Middleware("truckguard-ingestor"))
 
-	ingestLines := r.Group("/ingest", middleware.RequirePermission("create:ingest"))
+	ingestLines := r.Group("/ingest")
 	{
 		ingestLines.POST("/camera", handlers.HandleCameraIngest)
 		ingestLines.POST("/weight", handlers.HandleWeightIngest)

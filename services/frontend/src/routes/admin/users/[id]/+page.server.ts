@@ -1,10 +1,9 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { AuthClient } from '$lib/server/auth-client';
-import { CoreClient } from '$lib/server/core-client';
+import { can } from '$lib/auth';
 
 export const load: PageServerLoad = async ({ params, locals, cookies }) => {
-     if (!locals.user?.permissions?.includes('update:users')) {
+     if (!can(locals.user, 'update:users')) {
         throw redirect(303, '/admin/users');
     }
 
@@ -32,7 +31,7 @@ export const load: PageServerLoad = async ({ params, locals, cookies }) => {
 
 export const actions: Actions = {
     default: async ({ request, params, locals, cookies }) => {
-        if (!locals.user?.permissions?.includes('update:users')) {
+        if (!can(locals.user, 'update:users')) {
             return fail(403, { error: 'You do not have permission to update users' });
         }
 

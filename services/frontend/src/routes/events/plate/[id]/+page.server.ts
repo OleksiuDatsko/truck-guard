@@ -1,5 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { error, fail } from '@sveltejs/kit';
+import { can } from '$lib/auth';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
     if (!locals.coreClient) {
@@ -21,12 +22,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 export const actions: Actions = {
     correct: async ({ request, params, locals }) => {
-        if (!locals.coreClient || !locals.user) {
-            return fail(401, { error: 'Unauthorized' });
-        }
-
-        if (!locals.user.permissions.includes('update:events')) {
-            return fail(403, { error: 'Forbidden: Missing update:events permission' });
+        if (!locals.coreClient || !can(locals.user, 'update:events')) {
+            return fail(401, { error: 'Unauthorized or missing permissions' });
         }
 
         const data = await request.formData();

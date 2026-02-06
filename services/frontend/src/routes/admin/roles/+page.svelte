@@ -13,7 +13,7 @@
   import Shield from "@lucide/svelte/icons/shield";
   import Plus from "@lucide/svelte/icons/plus";
   import { toast } from "svelte-sonner";
-  import { can } from "$lib/auth";
+  import { can as authCan } from "$lib/auth";
 
   let { data }: { data: PageData } = $props();
 
@@ -77,7 +77,7 @@
         Керування ролями користувачів та їх доступом.
       </p>
     </div>
-    {#if can(data.user,"create:roles")}
+    {#if authCan(data.user, "create:roles")}
       <Button onclick={openCreate}>
         <Plus class="mr-2 h-4 w-4" />
         Створити роль
@@ -100,7 +100,7 @@
             <Table.Cell class="font-medium">{role.name}</Table.Cell>
             <Table.Cell>{role.description}</Table.Cell>
             <Table.Cell class="text-right space-x-2">
-              {#if can(data.user,"update:roles")}
+              {#if authCan(data.user, "update:roles")}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -118,7 +118,7 @@
                   <Pencil class="h-4 w-4" />
                 </Button>
               {/if}
-              {#if can(data.user,"delete:roles")}
+              {#if authCan(data.user, "delete:roles")}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -288,6 +288,7 @@
                   value={perm.id}
                   checked={selectedPermissions.includes(perm.id)}
                   onCheckedChange={() => togglePermission(perm.id)}
+                  disabled={!authCan(data.user, perm.id)}
                 />
                 <div class="grid gap-1.5 leading-none">
                   <Label

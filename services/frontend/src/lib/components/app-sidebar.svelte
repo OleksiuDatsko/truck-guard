@@ -1,9 +1,9 @@
 <script lang="ts" module>
+  import { can } from "$lib/auth";
   // Іконки
   import Activity from "@lucide/svelte/icons/activity";
   import Camera from "@lucide/svelte/icons/camera";
   import ClipboardList from "@lucide/svelte/icons/clipboard-list";
-
   import LayoutDashboard from "@lucide/svelte/icons/layout-dashboard";
   import Scale from "@lucide/svelte/icons/scale";
   import Settings from "@lucide/svelte/icons/settings";
@@ -18,7 +18,7 @@
         title: "Події",
         url: "/events",
         icon: LayoutDashboard,
-        permissions: ["read:events", "read:trips"],
+        permissions: ["read:events"],
       },
       {
         title: "Журнал перепусток",
@@ -30,7 +30,7 @@
         title: "Конфігурація",
         url: "#",
         icon: Settings,
-        permissions: ["manage:configs", "read:cameras", "read:scales", "read:gates"],
+        permissions: ["read:settings"],
         items: [
           {
             title: "Камери",
@@ -44,12 +44,11 @@
             icon: Scale,
             permissions: ["read:scales"],
           },
-
           {
             title: "Налаштування",
             url: "/config/settings",
             icon: SlidersHorizontal,
-            permissions: ["read:settings"],
+            permissions: ["update:settings"],
           },
         ],
       },
@@ -57,7 +56,7 @@
         title: "Адміністрування",
         url: "#",
         icon: ShieldCheck,
-        permissions: ["read:users", "read:roles", "read:keys"],
+        permissions: ["read:users"],
         items: [
           {
             title: "Користувачі",
@@ -83,20 +82,20 @@
         title: "Системний аудит",
         url: "/system/audit",
         icon: Activity,
-        permissions: ["view:audit"],
+        permissions: ["read:audit"],
       },
     ],
   };
 
-  function filterNavItems(items: any[], permissions: string[]): any[] {
+  function filterNavItems(items: any[], user: any): any[] {
     return items
       .filter((item) => {
         if (!item.permissions) return true;
-        return item.permissions.some((p: string) => permissions.includes(p));
+        return item.permissions.some((p: string) => can(user, p));
       })
       .map((item) => {
         if (item.items) {
-          return { ...item, items: filterNavItems(item.items, permissions) };
+          return { ...item, items: filterNavItems(item.items, user) };
         }
         return item;
       })
@@ -122,35 +121,37 @@
     user,
     ...restProps
   }: ComponentProps<typeof Sidebar.Root> & {
-    user: any; 
+    user: any;
   } = $props();
 
   const sidebar = useSidebar();
 
   let filteredNavMain = $derived(
-    user?.permissions ? filterNavItems(data.navMain, user.permissions) : []
+    user?.permissions ? filterNavItems(data.navMain, user) : [],
   );
 </script>
 
 <Sidebar.Root {collapsible} {...restProps}>
   <Sidebar.Header>
     <div class="flex items-center gap-2 mx-auto py-2">
-        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <span class="font-bold">TG</span>
+      <div
+        class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+      >
+        <span class="font-bold">TG</span>
+      </div>
+      {#if sidebar.state !== "collapsed"}
+        <div class="flex flex-col gap-0.5 leading-none">
+          <span class="font-semibold text-lg tracking-tight">TruckGuard</span>
+          <span class="text-xs text-muted-foreground">Logistics Control</span>
         </div>
-        {#if sidebar.state !== "collapsed"}
-            <div class="flex flex-col gap-0.5 leading-none">
-                <span class="font-semibold text-lg tracking-tight">TruckGuard</span>
-                <span class="text-xs text-muted-foreground">Logistics Control</span>
-            </div>
-        {/if}
+      {/if}
     </div>
   </Sidebar.Header>
-  
+
   <Sidebar.Content>
     <NavMain items={filteredNavMain} />
   </Sidebar.Content>
-  
+
   <Sidebar.Footer>
     <NavUser {user} />
   </Sidebar.Footer>
